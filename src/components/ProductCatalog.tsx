@@ -9,12 +9,110 @@ const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
 const messengerUrl = "https://m.me/skymusicbg";
 
+const categoryVisuals: Record<
+  string,
+  {
+    icon: string;
+    subtitle: string;
+    gradient: string;
+  }
+> = {
+  "Струнни инструменти": {
+    icon: "🎸",
+    subtitle: "Китари, бас китари и струнни аксесоари",
+    gradient:
+      "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
+  },
+  "Клавишни инструменти": {
+    icon: "🎹",
+    subtitle: "Клавири, синтезатори и дигитални пиана",
+    gradient:
+      "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.35), rgba(15,23,42,0.98))",
+  },
+  "Ударни инструменти": {
+    icon: "🥁",
+    subtitle: "Барабани, перкусии и ритъм аксесоари",
+    gradient:
+      "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,41,59,0.45), rgba(2,6,23,0.98))",
+  },
+  Микрофони: {
+    icon: "🎤",
+    subtitle: "Вокални, студийни и сценични микрофони",
+    gradient:
+      "linear-gradient(135deg, rgba(125,211,252,0.24), rgba(29,78,216,0.35), rgba(2,6,23,0.98))",
+  },
+  "Студио оборудване": {
+    icon: "🎚️",
+    subtitle: "Аудио интерфейси, монитори и студио техника",
+    gradient:
+      "linear-gradient(135deg, rgba(96,165,250,0.26), rgba(15,23,42,0.55), rgba(0,0,0,0.98))",
+  },
+  Аксесоари: {
+    icon: "🔌",
+    subtitle: "Кабели, стойки, адаптери и консумативи",
+    gradient:
+      "linear-gradient(135deg, rgba(148,163,184,0.22), rgba(30,64,175,0.28), rgba(2,6,23,0.98))",
+  },
+};
+
+const howItWorks = [
+  {
+    step: "01",
+    title: "Разглеждаш каталога",
+    description:
+      "Избираш категория, търсиш по име или марка и намираш подходящ продукт.",
+  },
+  {
+    step: "02",
+    title: "Пишеш или оставяш данни",
+    description:
+      "Можеш да изпратиш директно WhatsApp запитване или да отвориш страница за заявка с данни за доставка.",
+  },
+  {
+    step: "03",
+    title: "Уточняваме детайлите",
+    description:
+      "Потвърждаваме наличност, крайна цена, доставка или вземане от магазина в Бургас.",
+  },
+];
+
 function makeWhatsappLink(productName?: string) {
   const message = productName
     ? `Здравейте, интересувам се от ${productName}. Наличен ли е продуктът и как мога да го получа?`
     : "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
+function makeRequestLink(productName?: string) {
+  if (!productName) {
+    return "/request";
+  }
+
+  return `/request?product=${encodeURIComponent(productName)}`;
+}
+
+function getCategoryVisual(category: string) {
+  return (
+    categoryVisuals[category] ?? {
+      icon: "🎵",
+      subtitle: "Музикално оборудване и аксесоари",
+      gradient:
+        "linear-gradient(135deg, rgba(14,165,233,0.25), rgba(30,64,175,0.35), rgba(2,6,23,0.98))",
+    }
+  );
+}
+
+function getStatusClass(status: string) {
+  if (status === "Наличен") {
+    return "bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20";
+  }
+
+  if (status === "По заявка") {
+    return "bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/20";
+  }
+
+  return "bg-red-400/10 text-red-300 ring-1 ring-red-400/20";
 }
 
 export default function ProductCatalog() {
@@ -32,7 +130,8 @@ export default function ProductCatalog() {
         normalizedSearch.length === 0 ||
         product.name.toLowerCase().includes(normalizedSearch) ||
         product.brand.toLowerCase().includes(normalizedSearch) ||
-        product.category.toLowerCase().includes(normalizedSearch);
+        product.category.toLowerCase().includes(normalizedSearch) ||
+        product.description.toLowerCase().includes(normalizedSearch);
 
       return matchesCategory && matchesSearch;
     });
@@ -69,6 +168,9 @@ export default function ProductCatalog() {
               <a href="#products" className="hover:text-white">
                 Продукти
               </a>
+              <a href="/request" className="hover:text-white">
+                Заявка
+              </a>
               <a href="#about" className="hover:text-white">
                 За нас
               </a>
@@ -80,6 +182,7 @@ export default function ProductCatalog() {
             <a
               href={makeWhatsappLink()}
               target="_blank"
+              rel="noreferrer"
               className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
             >
               WhatsApp
@@ -99,8 +202,8 @@ export default function ProductCatalog() {
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
               Разгледай продуктите на SKY MUSIC BG. Ако нещо ти хареса,
-              свържи се с нас по WhatsApp, Messenger, телефон или имейл.
-              Ще уточним наличност, цена, доставка или вземане от магазина.
+              свържи се с нас по WhatsApp, Messenger, телефон или остави
+              данни за заявка и доставка.
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
@@ -112,11 +215,26 @@ export default function ProductCatalog() {
               </a>
 
               <a
-                href={`tel:${phone}`}
+                href="/request"
                 className="rounded-full border border-white/15 bg-white/5 px-8 py-4 text-center font-black text-white transition hover:bg-white/10"
               >
-                Обади се
+                Остави данни
               </a>
+            </div>
+
+            <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-2xl font-black">{products.length}+</p>
+                <p className="mt-1 text-xs text-slate-400">примерни продукта</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-2xl font-black">6</p>
+                <p className="mt-1 text-xs text-slate-400">категории</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-2xl font-black">BG</p>
+                <p className="mt-1 text-xs text-slate-400">Бургас</p>
+              </div>
             </div>
           </div>
 
@@ -133,8 +251,7 @@ export default function ProductCatalog() {
                   </h2>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
                     Разгледай инструменти, микрофони, студио техника и
-                    аксесоари. Изпрати запитване и ще уточним наличност,
-                    цена и получаване.
+                    аксесоари. Изпрати запитване или остави данни за доставка.
                   </p>
                 </div>
 
@@ -144,17 +261,26 @@ export default function ProductCatalog() {
                     "Клавишни инструменти",
                     "Микрофони",
                     "Студио оборудване",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-5"
-                    >
-                      <p className="font-bold">{item}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        Наличности, консултация и заявка
-                      </p>
-                    </div>
-                  ))}
+                  ].map((item) => {
+                    const visual = getCategoryVisual(item);
+
+                    return (
+                      <div
+                        key={item}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-3xl">{visual.icon}</span>
+                          <div>
+                            <p className="font-bold">{item}</p>
+                            <p className="mt-1 text-sm text-slate-400">
+                              Наличности, консултация и заявка
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <div className="mt-8 rounded-2xl bg-white p-5 text-black">
@@ -180,12 +306,16 @@ export default function ProductCatalog() {
               </h2>
               <p className="mt-4 max-w-2xl text-slate-400">
                 Използвай категория или търсене. Всеки продукт има директно
-                запитване по WhatsApp.
+                запитване по WhatsApp, телефон и отделна страница за заявка.
               </p>
             </div>
 
             <div className="w-full md:max-w-sm">
+              <label className="sr-only" htmlFor="product-search">
+                Търси продукт
+              </label>
               <input
+                id="product-search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Търси продукт, марка или категория..."
@@ -215,61 +345,107 @@ export default function ProductCatalog() {
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredProducts.map((product) => (
-              <article
-                key={product.id}
-                className="group overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
-              >
-                <div className="flex h-56 items-end justify-between bg-gradient-to-br from-slate-800 via-blue-950 to-black p-6">
-                  <div>
-                    <p className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-200">
-                      {product.category}
-                    </p>
-                    <p className="mt-4 text-4xl font-black text-white/90">
-                      {product.imageLabel}
-                    </p>
-                  </div>
-                  <div className="h-20 w-20 rounded-full bg-sky-400/20 blur-xl transition group-hover:bg-sky-300/30" />
-                </div>
+            {filteredProducts.map((product) => {
+              const visual = getCategoryVisual(product.category);
 
-                <div className="p-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">
+              return (
+                <article
+                  key={product.id}
+                  className="group overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
+                >
+                  <div
+                    className="relative flex h-60 flex-col justify-between overflow-hidden p-6"
+                    style={{ background: visual.gradient }}
+                  >
+                    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
+                    <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
+
+                    <div className="relative flex items-start justify-between gap-4">
+                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10">
+                        {product.category}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
+                          product.status,
+                        )}`}
+                      >
+                        {product.status}
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
+                        {visual.icon}
+                      </div>
+                      <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
+                        {visual.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
                       {product.brand}
                     </p>
-                    <span
-                      className={
-                        product.status === "Наличен"
-                          ? "rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300"
-                          : product.status === "По заявка"
-                            ? "rounded-full bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300"
-                            : "rounded-full bg-red-400/10 px-3 py-1 text-xs font-bold text-red-300"
-                      }
-                    >
-                      {product.status}
-                    </span>
+
+                    <h3 className="mt-3 text-2xl font-black leading-tight">
+                      {product.name}
+                    </h3>
+
+                    <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
+                      {product.description}
+                    </p>
+
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                            Цена
+                          </p>
+                          <p className="mt-1 text-3xl font-black">
+                            {product.price}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                            Заявка
+                          </p>
+                          <p className="mt-1 text-sm text-slate-300">
+                            WhatsApp / доставка
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <a
+                        href={makeWhatsappLink(product.name)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+                      >
+                        Запитване
+                      </a>
+
+                      <a
+                        href={`tel:${phone}`}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+                      >
+                        Обади се
+                      </a>
+
+                      <a
+                        href={makeRequestLink(product.name)}
+                        className="col-span-2 rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+                      >
+                        Остави данни за доставка
+                      </a>
+                    </div>
                   </div>
-
-                  <h3 className="mt-4 text-2xl font-black">{product.name}</h3>
-
-                  <p className="mt-3 min-h-16 text-sm leading-6 text-slate-400">
-                    {product.description}
-                  </p>
-
-                  <div className="mt-6 flex items-center justify-between gap-4">
-                    <p className="text-3xl font-black">{product.price}</p>
-
-                    <a
-                      href={makeWhatsappLink(product.name)}
-                      target="_blank"
-                      className="rounded-full bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-sky-100"
-                    >
-                      Запитване
-                    </a>
-                  </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
 
           {filteredProducts.length === 0 && (
@@ -349,6 +525,7 @@ export default function ProductCatalog() {
                   <a
                     href={makeWhatsappLink()}
                     target="_blank"
+                    rel="noreferrer"
                     className="rounded-2xl bg-green-600 px-6 py-5 text-center font-black text-white"
                   >
                     WhatsApp
@@ -356,6 +533,7 @@ export default function ProductCatalog() {
                   <a
                     href={messengerUrl}
                     target="_blank"
+                    rel="noreferrer"
                     className="rounded-2xl bg-blue-600 px-6 py-5 text-center font-black text-white"
                   >
                     Messenger
@@ -385,6 +563,43 @@ export default function ProductCatalog() {
                   <p>Каталог с цени и директно запитване</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="py-16">
+          <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-8 md:p-12">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
+                  Как работи
+                </p>
+                <h2 className="mt-3 text-4xl font-black md:text-5xl">
+                  Каталог без количка и онлайн плащане
+                </h2>
+              </div>
+
+              <p className="max-w-xl text-slate-400">
+                Целта е клиентът да избере продукт и да се свърже с магазина.
+                Така потвърждаваме наличност и детайли преди изпращане.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              {howItWorks.map((item) => (
+                <div
+                  key={item.step}
+                  className="rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+                >
+                  <p className="text-sm font-black text-sky-300">
+                    {item.step}
+                  </p>
+                  <h3 className="mt-4 text-2xl font-black">{item.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-400">
+                    {item.description}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
