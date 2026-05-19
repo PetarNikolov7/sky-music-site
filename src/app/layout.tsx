@@ -59,9 +59,18 @@ export const metadata: Metadata = {
     images: ["/sky-music-logo-dark-header.png"],
   },
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/sky-music-logo-dark-header.png",
+    icon: [
+      {
+        url: "/icon.svg?v=3",
+        type: "image/svg+xml",
+      },
+      {
+        url: "/sky-music-favicon.svg?v=3",
+        type: "image/svg+xml",
+      },
+    ],
+    shortcut: "/icon.svg?v=3",
+    apple: "/sky-music-favicon.svg?v=3",
   },
 };
 
@@ -72,6 +81,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="bg">
+      <head>
+        <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/icon.svg?v=3" type="image/svg+xml" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

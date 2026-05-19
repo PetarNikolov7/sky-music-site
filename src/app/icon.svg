@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="120" fill="#05070D"/>
+  <rect x="28" y="28" width="456" height="456" rx="100" fill="url(#paint0_linear)"/>
+  <circle cx="256" cy="256" r="150" fill="#05070D" fill-opacity="0.72"/>
+  <path d="M210 316C210 341.405 230.595 362 256 362C281.405 362 302 341.405 302 316V300H330V316C330 351.935 305.084 382.054 271.5 390.011V424H240.5V390.011C206.916 382.054 182 351.935 182 316V300H210V316Z" fill="white"/>
+  <path d="M256 92C229.49 92 208 113.49 208 140V254C208 280.51 229.49 302 256 302C282.51 302 304 280.51 304 254V140C304 113.49 282.51 92 256 92Z" fill="white"/>
+  <path d="M224 154H288" stroke="#05070D" stroke-width="18" stroke-linecap="round"/>
+  <path d="M224 196H288" stroke="#05070D" stroke-width="18" stroke-linecap="round"/>
+  <path d="M224 238H288" stroke="#05070D" stroke-width="18" stroke-linecap="round"/>
+  <text x="256" y="474" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="900" fill="#60A5FA">SKY MUSIC</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="42" y1="42" x2="470" y2="470" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="0.45" stop-color="#1D4ED8"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+</svg>
