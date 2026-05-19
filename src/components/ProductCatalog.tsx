@@ -165,7 +165,7 @@ export default function ProductCatalog() {
             </a>
 
             <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
-              <a href="#products" className="hover:text-white">
+              <a href="/products" className="hover:text-white">
                 Продукти
               </a>
               <a href="/request" className="hover:text-white">
@@ -208,7 +208,7 @@ export default function ProductCatalog() {
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
               <a
-                href="#products"
+                href="/products"
                 className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/50 transition hover:scale-[1.02]"
               >
                 Виж каталога
