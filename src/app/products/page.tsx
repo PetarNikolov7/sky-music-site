@@ -69,6 +69,10 @@ function makeRequestLink(productName?: string) {
   return `/request?product=${encodeURIComponent(productName)}`;
 }
 
+function makeProductLink(productId: string) {
+  return `/products/${productId}`;
+}
+
 function getCategoryVisual(category: string) {
   return (
     categoryVisuals[category] ?? {
@@ -141,6 +145,10 @@ export default function ProductsPage() {
     }
   }
 
+  function openProduct(productId: string) {
+    window.location.href = makeProductLink(productId);
+  }
+
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
@@ -195,8 +203,8 @@ export default function ProductsPage() {
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
                   Разгледай продуктите по категория, търси по име или марка и
-                  изпрати директно запитване. Няма онлайн количка — уточняваме
-                  наличност, цена и доставка лично.
+                  отвори детайлна страница за всеки продукт. Няма онлайн количка
+                  — уточняваме наличност, цена и доставка лично.
                 </p>
               </div>
 
@@ -283,7 +291,16 @@ export default function ProductsPage() {
               return (
                 <article
                   key={product.id}
-                  className="group overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => openProduct(product.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openProduct(product.id);
+                    }
+                  }}
+                  className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
                 >
                   <div
                     className="relative flex h-60 flex-col justify-between overflow-hidden p-6"
@@ -320,7 +337,7 @@ export default function ProductsPage() {
                       {product.brand}
                     </p>
 
-                    <h2 className="mt-3 text-2xl font-black leading-tight">
+                    <h2 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
                       {product.name}
                     </h2>
 
@@ -341,10 +358,10 @@ export default function ProductsPage() {
 
                         <div className="text-right">
                           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                            Заявка
+                            Детайли
                           </p>
                           <p className="mt-1 text-sm text-slate-300">
-                            WhatsApp / доставка
+                            Отвори продукта
                           </p>
                         </div>
                       </div>
@@ -352,9 +369,18 @@ export default function ProductsPage() {
 
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <a
+                        href={makeProductLink(product.id)}
+                        onClick={(event) => event.stopPropagation()}
+                        className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+                      >
+                        Виж продукта
+                      </a>
+
+                      <a
                         href={makeWhatsappLink(product.name)}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(event) => event.stopPropagation()}
                         className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
                       >
                         Запитване
@@ -362,6 +388,7 @@ export default function ProductsPage() {
 
                       <a
                         href={`tel:${phone}`}
+                        onClick={(event) => event.stopPropagation()}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
                       >
                         Обади се
@@ -369,9 +396,10 @@ export default function ProductsPage() {
 
                       <a
                         href={makeRequestLink(product.name)}
-                        className="col-span-2 rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+                        onClick={(event) => event.stopPropagation()}
+                        className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                       >
-                        Остави данни за доставка
+                        Остави данни
                       </a>
                     </div>
                   </div>
