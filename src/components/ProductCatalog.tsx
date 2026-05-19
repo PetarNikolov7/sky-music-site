@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { categories, products } from "@/data/products";
 
@@ -41,15 +42,25 @@ export default function ProductCatalog() {
     <main className="min-h-screen bg-[#05070d] text-white">
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
         <header className="sticky top-0 z-30 -mx-5 border-b border-white/10 bg-[#05070d]/85 px-5 py-4 backdrop-blur-xl md:-mx-8 md:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-6">
-            <a href="#" className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-blue-700 to-slate-950 font-black shadow-lg shadow-blue-950/50">
-                SM
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <a href="#" className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-48 shrink-0 items-center justify-center overflow-hidden sm:w-60">
+                <Image
+                  src="/sky-music-logo-dark-header.png"
+                  alt="SKY MUSIC BG logo"
+                  width={360}
+                  height={120}
+                  className="h-auto w-full object-contain"
+                  priority
+                />
               </div>
-              <div>
-                <p className="text-lg font-black tracking-wide">SKY MUSIC BG</p>
+
+              <div className="hidden lg:block">
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
                   Burgas Music Store
+                </p>
+                <p className="text-sm font-bold text-slate-300">
+                  Instruments · Studio · Accessories
                 </p>
               </div>
             </a>
@@ -69,7 +80,7 @@ export default function ProductCatalog() {
             <a
               href={makeWhatsappLink()}
               target="_blank"
-              className="rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
+              className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
             >
               WhatsApp
             </a>
@@ -113,9 +124,19 @@ export default function ProductCatalog() {
             <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-sky-500/30 via-blue-700/20 to-transparent blur-2xl" />
             <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-black/50">
               <div className="rounded-[2rem] bg-gradient-to-br from-slate-900 via-blue-950 to-black p-8">
-                <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-300">
-                  SKY MUSIC BG
-                </p>
+                <div className="rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/15 via-blue-700/10 to-white/5 p-6">
+                  <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
+                    SKY MUSIC BG
+                  </p>
+                  <h2 className="mt-4 text-3xl font-black leading-tight">
+                    Каталог за музиканти, студиа и сцена
+                  </h2>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">
+                    Разгледай инструменти, микрофони, студио техника и
+                    аксесоари. Изпрати запитване и ще уточним наличност,
+                    цена и получаване.
+                  </p>
+                </div>
 
                 <div className="mt-10 grid gap-4">
                   {[
@@ -343,11 +364,21 @@ export default function ProductCatalog() {
               </div>
 
               <div className="bg-gradient-to-br from-blue-950 via-slate-950 to-black p-8 text-white md:p-12">
-                <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-300">
-                  Бургас
-                </p>
-                <h3 className="mt-4 text-3xl font-black">SKY MUSIC BG</h3>
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                  <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
+                    SKY MUSIC BG
+                  </p>
+                  <h3 className="mt-4 text-3xl font-black">
+                    Бургас · Музикален магазин
+                  </h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">
+                    Лична консултация, проверка на наличност и изпращане след
+                    уговорка.
+                  </p>
+                </div>
+
                 <div className="mt-8 space-y-4 text-slate-300">
+                  <p>Бургас</p>
                   <p>Музикални инструменти</p>
                   <p>Студио оборудване</p>
                   <p>Аксесоари</p>
@@ -361,7 +392,9 @@ export default function ProductCatalog() {
         <footer className="border-t border-white/10 py-8 text-sm text-slate-500">
           <div className="flex flex-col justify-between gap-4 md:flex-row">
             <p>© 2026 SKY MUSIC BG. Всички права запазени.</p>
-            <p>Бургас · {phone} · {email}</p>
+            <p>
+              Бургас · {phone} · {email}
+            </p>
           </div>
         </footer>
       </section>
