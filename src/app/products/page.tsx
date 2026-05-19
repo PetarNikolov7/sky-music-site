@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState, type WheelEvent } from "react";
+import { useMemo, useRef, useState, useEffect, Suspense, type WheelEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { categories, products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -73,6 +74,14 @@ function makeProductLink(productId: string) {
   return `/products/${productId}`;
 }
 
+function makeCategoryUrl(category: string) {
+  if (category === "Всички") {
+    return "/products";
+  }
+
+  return `/products?category=${encodeURIComponent(category)}`;
+}
+
 function getCategoryVisual(category: string) {
   return (
     categoryVisuals[category] ?? {
@@ -96,10 +105,22 @@ function getStatusClass(status: string) {
   return "bg-red-400/10 text-red-300 ring-1 ring-red-400/20";
 }
 
-export default function ProductsPage() {
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
+  const categoryFromUrl = searchParams.get("category");
+
   const [selectedCategory, setSelectedCategory] = useState("Всички");
   const [search, setSearch] = useState("");
   const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
+      setSelectedCategory(categoryFromUrl);
+      return;
+    }
+
+    setSelectedCategory("Всички");
+  }, [categoryFromUrl]);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -143,6 +164,11 @@ export default function ProductsPage() {
       event.preventDefault();
       scroller.scrollLeft += event.deltaY;
     }
+  }
+
+  function selectCategory(category: string) {
+    setSelectedCategory(category);
+    window.history.replaceState(null, "", makeCategoryUrl(category));
   }
 
   function openProduct(productId: string) {
@@ -215,6 +241,12 @@ export default function ProductsPage() {
                 </p>
               </div>
             </div>
+
+            {selectedCategory !== "Всички" && (
+              <div className="mt-6 inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-bold text-sky-100">
+                Филтър: {selectedCategory}
+              </div>
+            )}
           </div>
         </section>
 
@@ -245,7 +277,7 @@ export default function ProductsPage() {
                     <button
                       key={category}
                       type="button"
-                      onClick={() => setSelectedCategory(category)}
+                      onClick={() => selectCategory(category)}
                       className={
                         active
                           ? "whitespace-nowrap rounded-full bg-sky-400 px-5 py-3 text-sm font-black text-black"
@@ -426,5 +458,21 @@ export default function ProductsPage() {
         </footer>
       </section>
     </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#05070d] text-white">
+          <section className="mx-auto max-w-7xl px-5 py-10">
+            Зареждане...
+          </section>
+        </main>
+      }
+    >
+      <ProductsPageContent />
+    </Suspense>
   );
 }

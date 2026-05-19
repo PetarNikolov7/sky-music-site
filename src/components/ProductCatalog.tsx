@@ -96,6 +96,10 @@ function makeProductLink(productId: string) {
   return `/products/${productId}`;
 }
 
+function makeCategoryLink(category: string) {
+  return `/products?category=${encodeURIComponent(category)}`;
+}
+
 function getCategoryVisual(category: string) {
   return (
     categoryVisuals[category] ?? {
@@ -150,7 +154,7 @@ export default function ProductCatalog() {
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
         <header className="sticky top-0 z-30 -mx-5 border-b border-white/10 bg-[#05070d]/85 px-5 py-4 backdrop-blur-xl md:-mx-8 md:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <a href="#" className="flex min-w-0 items-center gap-4">
+            <a href="/" className="flex min-w-0 items-center gap-4">
               <div className="flex h-14 w-48 shrink-0 items-center justify-center overflow-hidden sm:w-60">
                 <Image
                   src="/sky-music-logo-dark-header.png"
@@ -273,20 +277,21 @@ export default function ProductCatalog() {
                     const visual = getCategoryVisual(item);
 
                     return (
-                      <div
+                      <a
                         key={item}
-                        className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                        href={makeCategoryLink(item)}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:border-sky-400/40 hover:bg-white/10"
                       >
                         <div className="flex items-center gap-4">
                           <span className="text-3xl">{visual.icon}</span>
                           <div>
                             <p className="font-bold">{item}</p>
                             <p className="mt-1 text-sm text-slate-400">
-                              Наличности, консултация и заявка
+                              Виж продуктите в категорията
                             </p>
                           </div>
                         </div>
-                      </div>
+                      </a>
                     );
                   })}
                 </div>
