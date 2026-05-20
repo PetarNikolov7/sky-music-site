@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useRef, useState, useEffect, Suspense, type WheelEvent } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type WheelEvent,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { categories, products } from "@/data/products";
 
@@ -74,12 +81,20 @@ function makeProductLink(productId: string) {
   return `/products/${productId}`;
 }
 
-function makeCategoryUrl(category: string) {
-  if (category === "Всички") {
-    return "/products";
+function makeProductsUrl(category: string, brand: string) {
+  const params = new URLSearchParams();
+
+  if (category !== "Всички") {
+    params.set("category", category);
   }
 
-  return `/products?category=${encodeURIComponent(category)}`;
+  if (brand !== "Всички марки") {
+    params.set("brand", brand);
+  }
+
+  const query = params.toString();
+
+  return query ? `/products?${query}` : "/products";
 }
 
 function getCategoryVisual(category: string) {
@@ -108,19 +123,37 @@ function getStatusClass(status: string) {
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const categoryFromUrl = searchParams.get("category");
+  const brandFromUrl = searchParams.get("brand");
+
+  const allBrands = useMemo(() => {
+    const brands = Array.from(
+      new Set(products.map((product) => product.brand).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b));
+
+    return ["Всички марки", ...brands];
+  }, []);
 
   const [selectedCategory, setSelectedCategory] = useState("Всички");
+  const [selectedBrand, setSelectedBrand] = useState("Всички марки");
   const [search, setSearch] = useState("");
   const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+  const brandScrollerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (categoryFromUrl && categories.includes(categoryFromUrl)) {
       setSelectedCategory(categoryFromUrl);
-      return;
+    } else {
+      setSelectedCategory("Всички");
     }
-
-    setSelectedCategory("Всички");
   }, [categoryFromUrl]);
+
+  useEffect(() => {
+    if (brandFromUrl) {
+      setSelectedBrand(brandFromUrl);
+    } else {
+      setSelectedBrand("Всички марки");
+    }
+  }, [brandFromUrl]);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -129,6 +162,9 @@ function ProductsPageContent() {
       const matchesCategory =
         selectedCategory === "Всички" || product.category === selectedCategory;
 
+      const matchesBrand =
+        selectedBrand === "Всички марки" || product.brand === selectedBrand;
+
       const matchesSearch =
         normalizedSearch.length === 0 ||
         product.name.toLowerCase().includes(normalizedSearch) ||
@@ -136,9 +172,9 @@ function ProductsPageContent() {
         product.category.toLowerCase().includes(normalizedSearch) ||
         product.description.toLowerCase().includes(normalizedSearch);
 
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesBrand && matchesSearch;
     });
-  }, [selectedCategory, search]);
+  }, [selectedCategory, selectedBrand, search]);
 
   function scrollCategories(direction: "left" | "right") {
     const scroller = categoryScrollerRef.current;
@@ -153,8 +189,27 @@ function ProductsPageContent() {
     });
   }
 
-  function handleCategoryWheel(event: WheelEvent<HTMLDivElement>) {
-    const scroller = categoryScrollerRef.current;
+  function scrollBrands(direction: "left" | "right") {
+    const scroller = brandScrollerRef.current;
+
+    if (!scroller) {
+      return;
+    }
+
+    scroller.scrollBy({
+      left: direction === "left" ? -220 : 220,
+      behavior: "smooth",
+    });
+  }
+
+  function handleHorizontalWheel(
+    event: WheelEvent<HTMLDivElement>,
+    target: "category" | "brand",
+  ) {
+    const scroller =
+      target === "category"
+        ? categoryScrollerRef.current
+        : brandScrollerRef.current;
 
     if (!scroller) {
       return;
@@ -168,12 +223,37 @@ function ProductsPageContent() {
 
   function selectCategory(category: string) {
     setSelectedCategory(category);
-    window.history.replaceState(null, "", makeCategoryUrl(category));
+    window.history.replaceState(
+      null,
+      "",
+      makeProductsUrl(category, selectedBrand),
+    );
+  }
+
+  function selectBrand(brand: string) {
+    setSelectedBrand(brand);
+    window.history.replaceState(
+      null,
+      "",
+      makeProductsUrl(selectedCategory, brand),
+    );
+  }
+
+  function clearFilters() {
+    setSelectedCategory("Всички");
+    setSelectedBrand("Всички марки");
+    setSearch("");
+    window.history.replaceState(null, "", "/products");
   }
 
   function openProduct(productId: string) {
     window.location.href = makeProductLink(productId);
   }
+
+  const hasActiveFilter =
+    selectedCategory !== "Всички" ||
+    selectedBrand !== "Всички марки" ||
+    search.trim().length > 0;
 
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
@@ -228,9 +308,8 @@ function ProductsPageContent() {
                   Всички продукти
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-                  Разгледай продуктите по категория, търси по име или марка и
-                  отвори детайлна страница за всеки продукт. Няма онлайн количка
-                  — уточняваме наличност, цена и доставка лично.
+                  Разгледай продуктите по категория, марка или търсене. Няма
+                  онлайн количка — уточняваме наличност, цена и доставка лично.
                 </p>
               </div>
 
@@ -242,49 +321,140 @@ function ProductsPageContent() {
               </div>
             </div>
 
-            {selectedCategory !== "Всички" && (
-              <div className="mt-6 inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-bold text-sky-100">
-                Филтър: {selectedCategory}
+            {hasActiveFilter && (
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {selectedCategory !== "Всички" && (
+                  <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-bold text-sky-100">
+                    Категория: {selectedCategory}
+                  </span>
+                )}
+
+                {selectedBrand !== "Всички марки" && (
+                  <span className="rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-2 text-sm font-bold text-blue-100">
+                    Марка: {selectedBrand}
+                  </span>
+                )}
+
+                {search.trim().length > 0 && (
+                  <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200">
+                    Търсене: {search}
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
+                >
+                  Изчисти филтрите
+                </button>
               </div>
             )}
           </div>
         </section>
 
         <section className="pb-10">
-          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
-            <div className="relative min-w-0 flex-1">
-              <div className="pointer-events-none absolute left-12 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
-              <div className="pointer-events-none absolute right-12 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
+          <div className="grid gap-5">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
+              <div className="relative min-w-0 flex-1">
+                <div className="pointer-events-none absolute left-12 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
+                <div className="pointer-events-none absolute right-12 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
+
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("left")}
+                  aria-label="Предишни категории"
+                  className="absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                >
+                  ‹
+                </button>
+
+                <div
+                  ref={categoryScrollerRef}
+                  onWheel={(event) => handleHorizontalWheel(event, "category")}
+                  className="mx-12 flex gap-3 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {categories.map((category) => {
+                    const active = selectedCategory === category;
+
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => selectCategory(category)}
+                        className={
+                          active
+                            ? "whitespace-nowrap rounded-full bg-sky-400 px-5 py-3 text-sm font-black text-black"
+                            : "whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 hover:bg-white/10"
+                        }
+                      >
+                        {category}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("right")}
+                  aria-label="Следващи категории"
+                  className="absolute right-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                >
+                  ›
+                </button>
+              </div>
+
+              <div className="w-full md:max-w-sm">
+                <label className="sr-only" htmlFor="product-search-page">
+                  Търси продукт
+                </label>
+                <input
+                  id="product-search-page"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Търси продукт, марка или категория..."
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                />
+              </div>
+            </div>
+
+            <div className="relative">
+              <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+                Филтър по марка
+              </p>
+
+              <div className="pointer-events-none absolute left-12 top-9 z-10 h-12 w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
+              <div className="pointer-events-none absolute right-12 top-9 z-10 h-12 w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
 
               <button
                 type="button"
-                onClick={() => scrollCategories("left")}
-                aria-label="Предишни категории"
-                className="absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                onClick={() => scrollBrands("left")}
+                aria-label="Предишни марки"
+                className="absolute left-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
               >
                 ‹
               </button>
 
               <div
-                ref={categoryScrollerRef}
-                onWheel={handleCategoryWheel}
+                ref={brandScrollerRef}
+                onWheel={(event) => handleHorizontalWheel(event, "brand")}
                 className="mx-12 flex gap-3 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
               >
-                {categories.map((category) => {
-                  const active = selectedCategory === category;
+                {allBrands.map((brand) => {
+                  const active = selectedBrand === brand;
 
                   return (
                     <button
-                      key={category}
+                      key={brand}
                       type="button"
-                      onClick={() => selectCategory(category)}
+                      onClick={() => selectBrand(brand)}
                       className={
                         active
-                          ? "whitespace-nowrap rounded-full bg-sky-400 px-5 py-3 text-sm font-black text-black"
+                          ? "whitespace-nowrap rounded-full bg-white px-5 py-3 text-sm font-black text-black"
                           : "whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 hover:bg-white/10"
                       }
                     >
-                      {category}
+                      {brand}
                     </button>
                   );
                 })}
@@ -292,25 +462,12 @@ function ProductsPageContent() {
 
               <button
                 type="button"
-                onClick={() => scrollCategories("right")}
-                aria-label="Следващи категории"
-                className="absolute right-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                onClick={() => scrollBrands("right")}
+                aria-label="Следващи марки"
+                className="absolute right-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
               >
                 ›
               </button>
-            </div>
-
-            <div className="w-full md:max-w-sm">
-              <label className="sr-only" htmlFor="product-search-page">
-                Търси продукт
-              </label>
-              <input
-                id="product-search-page"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Търси продукт, марка или категория..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-              />
             </div>
           </div>
         </section>
@@ -444,8 +601,16 @@ function ProductsPageContent() {
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center">
               <p className="text-xl font-bold">Няма намерени продукти.</p>
               <p className="mt-2 text-slate-400">
-                Пробвай друга категория или изчисти търсенето.
+                Пробвай друга категория, марка или изчисти филтрите.
               </p>
+
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
+              >
+                Изчисти филтрите
+              </button>
             </div>
           )}
         </section>

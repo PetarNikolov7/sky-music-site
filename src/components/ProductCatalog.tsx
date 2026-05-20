@@ -9,6 +9,39 @@ const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
 const messengerUrl = "https://m.me/skymusicbg";
 
+const brandBanners = [
+  {
+    name: "Yamaha",
+    label: "YAMAHA",
+    subtitle: "Инструменти, клавири и оборудване",
+  },
+  {
+    name: "Shure",
+    label: "SHURE",
+    subtitle: "Микрофони и сценичен звук",
+  },
+  {
+    name: "Focusrite",
+    label: "FOCUSRITE",
+    subtitle: "Аудио интерфейси и студио решения",
+  },
+  {
+    name: "Casio",
+    label: "CASIO",
+    subtitle: "Клавишни инструменти",
+  },
+  {
+    name: "Roland",
+    label: "ROLAND",
+    subtitle: "Сцена, студио и електронни инструменти",
+  },
+  {
+    name: "Behringer",
+    label: "BEHRINGER",
+    subtitle: "Студио и live sound техника",
+  },
+];
+
 const categoryVisuals: Record<
   string,
   {
@@ -60,7 +93,7 @@ const howItWorks = [
     step: "01",
     title: "Разглеждаш каталога",
     description:
-      "Избираш категория, търсиш по име или марка и намираш подходящ продукт.",
+      "Избираш категория, търсиш по име, марка или отваряш конкретен продукт.",
   },
   {
     step: "02",
@@ -98,6 +131,10 @@ function makeProductLink(productId: string) {
 
 function makeCategoryLink(category: string) {
   return `/products?category=${encodeURIComponent(category)}`;
+}
+
+function makeBrandLink(brand: string) {
+  return `/products?brand=${encodeURIComponent(brand)}`;
 }
 
 function getCategoryVisual(category: string) {
@@ -183,8 +220,8 @@ export default function ProductCatalog() {
               <a href="/request" className="hover:text-white">
                 Заявка
               </a>
-              <a href="#about" className="hover:text-white">
-                За нас
+              <a href="#brands" className="hover:text-white">
+                Марки
               </a>
               <a href="#contact" className="hover:text-white">
                 Контакти
@@ -305,6 +342,53 @@ export default function ProductCatalog() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section id="brands" className="py-10">
+          <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
+                Марки
+              </p>
+              <h2 className="mt-3 text-4xl font-black md:text-5xl">
+                Популярни брандове
+              </h2>
+              <p className="mt-4 max-w-2xl text-slate-400">
+                Избери марка и отвори каталога филтриран само по нея. По-късно
+                тук ще добавим реални лога на брандовете.
+              </p>
+            </div>
+
+            <a
+              href="/products"
+              className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+            >
+              Всички продукти
+            </a>
+          </div>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {brandBanners.map((brand) => (
+              <a
+                key={brand.name}
+                href={makeBrandLink(brand.name)}
+                className="group relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
+              >
+                <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-400/10 blur-2xl transition group-hover:bg-sky-400/20" />
+                <div className="relative">
+                  <p className="text-2xl font-black tracking-tight text-white">
+                    {brand.label}
+                  </p>
+                  <p className="mt-3 min-h-12 text-xs leading-5 text-slate-400">
+                    {brand.subtitle}
+                  </p>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.25em] text-sky-300">
+                    Виж марката →
+                  </p>
+                </div>
+              </a>
+            ))}
           </div>
         </section>
 
