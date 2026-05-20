@@ -82,7 +82,7 @@ function getStatusClass(status: string) {
 }
 
 function makeWhatsappLink(productName: string) {
-  const message = `Здравейте, интересувам се от ${productName}. Наличен ли е продуктът и как мога да го получа?`;
+  const message = `Здравейте, интересувам се от ${productName}. Моля за повече информация.`;
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
@@ -111,7 +111,7 @@ export async function generateMetadata({
 
   return {
     title: `${product.name} | SKY MUSIC BG`,
-    description: `${product.name} – ${product.description} Цена: ${product.price}. Категория: ${product.category}.`,
+    description: `${product.name} – ${product.description} Категория: ${product.category}. SKY MUSIC BG, Бургас.`,
     openGraph: {
       title: `${product.name} | SKY MUSIC BG`,
       description: product.description,
@@ -166,7 +166,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 Продукти
               </a>
               <a href="/request" className="hover:text-white">
-                Заявка
+                Поръчка / доставка
               </a>
             </nav>
 
@@ -308,11 +308,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             )}
 
             <div className="mt-8 rounded-[2rem] border border-sky-400/20 bg-sky-400/10 p-6">
-              <h2 className="text-2xl font-black">Как да го заявиш?</h2>
+              <h2 className="text-2xl font-black">Запитване или поръчка</h2>
               <p className="mt-3 leading-7 text-slate-300">
-                Можеш да изпратиш запитване в WhatsApp, да се обадиш директно
-                или да оставиш данни за доставка. След това SKY MUSIC BG ще
-                потвърди наличност, крайна цена и начин на получаване.
+                Ако имате въпроси за този продукт, можете да изпратите
+                запитване в WhatsApp или да се свържете с нас по телефон. Ако
+                желаете да поръчате директно, използвайте формата за поръчка и
+                доставка.
               </p>
             </div>
 
@@ -330,27 +331,28 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 href={`tel:${phone}`}
                 className="rounded-full border border-white/10 bg-white/5 px-6 py-4 text-center font-black text-white transition hover:bg-white/10"
               >
-                Обади се
+                Обадете се
               </a>
 
               <a
                 href={makeRequestLink(product.name)}
                 className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] sm:col-span-2"
               >
-                Остави данни за доставка
+                Поръчка / доставка
               </a>
             </div>
 
             <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
-              <h2 className="text-2xl font-black">Допълнителна информация</h2>
+              <h2 className="text-2xl font-black">Какво следва?</h2>
               <div className="mt-5 grid gap-4 text-sm leading-7 text-slate-300">
                 <p>
-                  Този сайт е каталог, а не автоматичен онлайн магазин. Преди
-                  изпращане се потвърждава наличност и крайна цена.
+                  След като изпратите заявка за поръчка, ние ще се свържем с
+                  Вас за потвърждение и уточняване на доставката или вземането
+                  от магазина.
                 </p>
                 <p>
-                  Доставката или вземането от място се уточняват след контакт
-                  със SKY MUSIC BG.
+                  При въпроси относно продукта можете да използвате WhatsApp,
+                  телефон или формата за заявка.
                 </p>
               </div>
             </div>

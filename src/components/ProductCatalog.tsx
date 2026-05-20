@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { categories, products } from "@/data/products";
+import { products } from "@/data/products";
 
 const phone = "+359884211761";
 const whatsappNumber = "359884211761";
@@ -45,7 +45,7 @@ const shoppingPaths = [
   {
     title: "За китаристи",
     description:
-      "Китари, аксесоари, кабели и оборудване за репетиции, сцена и домашно свирене.",
+      "Китари, аксесоари, кабели и оборудване за репетиции, сцена и домашна употреба.",
     href: "/products?category=Струнни%20инструменти",
     icon: "🎸",
     tag: "Струнни инструменти",
@@ -69,7 +69,7 @@ const shoppingPaths = [
   {
     title: "За клавиристи",
     description:
-      "Клавишни инструменти, синтезатори и решения за учене, сцена и студио.",
+      "Клавишни инструменти, синтезатори и решения за обучение, сцена и студио.",
     href: "/products?category=Клавишни%20инструменти",
     icon: "🎹",
     tag: "Клавишни инструменти",
@@ -125,29 +125,31 @@ const categoryVisuals: Record<
 const howItWorks = [
   {
     step: "01",
-    title: "Разглеждаш каталога",
+    title: "Избирате продукт",
     description:
-      "Избираш категория, марка или конкретен продукт от каталога.",
+      "Разгледайте продуктите и отворете страницата на желания артикул.",
   },
   {
     step: "02",
-    title: "Пишеш или оставяш данни",
+    title: "Правите запитване или поръчка",
     description:
-      "Можеш да изпратиш WhatsApp запитване или да оставиш данни за доставка.",
+      "Ако имате въпроси, изпратете запитване. Ако желаете да поръчате директно, използвайте формата за поръчка.",
   },
   {
     step: "03",
-    title: "Уточняваме детайлите",
+    title: "Ние се свързваме с Вас",
     description:
-      "Потвърждаваме наличност, крайна цена, доставка или вземане от магазина.",
+      "След получаване на заявката ще се свържем с Вас за потвърждение на поръчката и уточняване на доставката или вземането от магазина.",
   },
 ];
 
-const featuredProducts = products.filter((product) => product.featured).slice(0, 6);
+const featuredProducts = products
+  .filter((product) => product.featured)
+  .slice(0, 6);
 
 function makeWhatsappLink(productName?: string) {
   const message = productName
-    ? `Здравейте, интересувам се от ${productName}. Наличен ли е продуктът и как мога да го получа?`
+    ? `Здравейте, интересувам се от ${productName}. Моля за повече информация.`
     : "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
@@ -220,10 +222,10 @@ export default function ProductCatalog() {
 
               <div className="hidden lg:block">
                 <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                  Burgas Music Store
+                  Музикален магазин в Бургас
                 </p>
                 <p className="text-sm font-bold text-slate-300">
-                  Instruments · Studio · Accessories
+                  Инструменти · Студио · Аксесоари
                 </p>
               </div>
             </a>
@@ -257,7 +259,7 @@ export default function ProductCatalog() {
         <section className="grid gap-12 py-16 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
             <div className="mb-6 inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-200">
-              Физически магазин в Бургас · Каталог без онлайн плащане
+              Музикален магазин в Бургас · Онлайн заявки и доставка
             </div>
 
             <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
@@ -265,9 +267,10 @@ export default function ProductCatalog() {
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
-              SKY MUSIC BG е каталог за музиканти, студиа и сцена. Разгледай
-              продукти, избери марка или категория и се свържи с нас за
-              наличност, цена и доставка.
+              SKY MUSIC BG е музикален магазин в Бургас с повече от 30 години
+              традиция. Разгледайте продуктите, изберете марка или категория и
+              се свържете с нас при въпроси или направете поръчка чрез формата
+              за заявка.
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
@@ -275,29 +278,29 @@ export default function ProductCatalog() {
                 href="/products"
                 className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/50 transition hover:scale-[1.02]"
               >
-                Виж каталога
+                Вижте продуктите
               </a>
 
               <a
                 href="/request"
                 className="rounded-full border border-white/15 bg-white/5 px-8 py-4 text-center font-black text-white transition hover:bg-white/10"
               >
-                Остави данни
+                Поръчка / доставка
               </a>
             </div>
 
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-2xl font-black">{products.length}+</p>
-                <p className="mt-1 text-xs text-slate-400">примерни продукта</p>
+                <p className="mt-1 text-xs text-slate-400">продукта</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-2xl font-black">6</p>
                 <p className="mt-1 text-xs text-slate-400">категории</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-2xl font-black">BG</p>
-                <p className="mt-1 text-xs text-slate-400">Бургас</p>
+                <p className="text-2xl font-black">30+</p>
+                <p className="mt-1 text-xs text-slate-400">години традиция</p>
               </div>
             </div>
           </div>
@@ -311,11 +314,11 @@ export default function ProductCatalog() {
                     SKY MUSIC BG
                   </p>
                   <h2 className="mt-4 text-3xl font-black leading-tight">
-                    Избери категория и започни оттам
+                    Изберете категория
                   </h2>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Всеки сегмент отваря каталога вече филтриран по съответната
-                    категория.
+                    Всеки сегмент отваря страницата с продукти, филтрирана по
+                    съответната категория.
                   </p>
                 </div>
 
@@ -339,7 +342,7 @@ export default function ProductCatalog() {
                           <div>
                             <p className="font-bold">{item}</p>
                             <p className="mt-1 text-sm text-slate-400">
-                              Виж продуктите в категорията
+                              Отворете категорията
                             </p>
                           </div>
                         </div>
@@ -370,8 +373,8 @@ export default function ProductCatalog() {
                 Популярни брандове
               </h2>
               <p className="mt-4 max-w-2xl text-slate-400">
-                Избери марка и отвори каталога филтриран само по нея. По-късно
-                ще заменим текстовите банери с реални лога.
+                Изберете марка, за да видите продуктите от съответния бранд.
+                По-късно тук ще добавим реалните лога на марките.
               </p>
             </div>
 
@@ -399,7 +402,7 @@ export default function ProductCatalog() {
                     {brand.subtitle}
                   </p>
                   <p className="mt-5 text-xs font-bold uppercase tracking-[0.25em] text-sky-300">
-                    Виж марката →
+                    Вижте продуктите →
                   </p>
                 </div>
               </a>
@@ -415,13 +418,13 @@ export default function ProductCatalog() {
                   Избор според нуждата
                 </p>
                 <h2 className="mt-3 text-4xl font-black md:text-5xl">
-                  Намери правилното оборудване по-бързо
+                  Намерете правилното оборудване по-бързо
                 </h2>
               </div>
 
               <p className="max-w-xl text-slate-400">
-                Вместо да търсиш на сляпо, започни от конкретна посока —
-                китара, вокал, домашно студио или клавишни инструменти.
+                Изберете начална посока според това, което търсите — китара,
+                вокал, домашно студио или клавишни инструменти.
               </p>
             </div>
 
@@ -447,7 +450,7 @@ export default function ProductCatalog() {
                   </p>
 
                   <p className="mt-6 text-sm font-black text-white transition group-hover:text-sky-200">
-                    Отвори категорията →
+                    Отворете продуктите →
                   </p>
                 </a>
               ))}
@@ -465,8 +468,8 @@ export default function ProductCatalog() {
                 Избрани продукти
               </h2>
               <p className="mt-4 max-w-2xl text-slate-400">
-                Кратък начален подбор. За пълния каталог, филтри по марка и
-                категории отвори страницата с всички продукти.
+                Начален подбор от продукти. За всички категории, марки и филтри
+                отворете страницата с продуктите.
               </p>
             </div>
 
@@ -474,7 +477,7 @@ export default function ProductCatalog() {
               href="/products"
               className="rounded-full bg-white px-6 py-3 text-center text-sm font-black text-black transition hover:bg-slate-200"
             >
-              Виж всички продукти
+              Вижте всички продукти
             </a>
           </div>
 
@@ -582,7 +585,7 @@ export default function ProductCatalog() {
                             Детайли
                           </p>
                           <p className="mt-1 text-sm text-slate-300">
-                            Отвори продукта
+                            Отворете продукта
                           </p>
                         </div>
                       </div>
@@ -594,7 +597,7 @@ export default function ProductCatalog() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
                       >
-                        Виж продукта
+                        Вижте продукта
                       </a>
 
                       <a
@@ -612,7 +615,7 @@ export default function ProductCatalog() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
                       >
-                        Обади се
+                        Обадете се
                       </a>
 
                       <a
@@ -620,7 +623,7 @@ export default function ProductCatalog() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                       >
-                        Остави данни
+                        Поръчка / доставка
                       </a>
                     </div>
                   </div>
@@ -639,22 +642,23 @@ export default function ProductCatalog() {
               За SKY MUSIC BG
             </p>
             <h2 className="mt-4 text-4xl font-black">
-              Реален магазин, лично обслужване и консултация преди покупка.
+              Музикален магазин с 30 години традиция, лично обслужване и
+              професионална консултация.
             </h2>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-              SKY MUSIC BG предлага музикални инструменти, студио оборудване
-              и аксесоари в Бургас. Сайтът служи като каталог — клиентът
-              разглежда, избира и се свързва с нас за потвърждение на наличност,
-              цена и начин на получаване.
+              SKY MUSIC BG предлага музикални инструменти, студио оборудване и
+              аксесоари в Бургас вече повече от 30 години. В нашия сайт можете
+              да разгледате продукти, да направите запитване при въпроси или да
+              изпратите заявка за поръчка и доставка.
             </p>
           </div>
 
           <div className="grid gap-3">
             {[
-              "Физически магазин в Бургас",
-              "Запитване преди покупка",
-              "Консултация за избор",
-              "Доставка след уговорка",
+              "Магазин в Бургас",
+              "30 години традиция",
+              "Професионална консултация",
+              "Поръчка и доставка след потвърждение",
             ].map((item) => (
               <div
                 key={item}
@@ -674,11 +678,12 @@ export default function ProductCatalog() {
                   Контакти
                 </p>
                 <h2 className="mt-4 text-4xl font-black md:text-5xl">
-                  Хареса ли си продукт?
+                  Избрахте продукт?
                 </h2>
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                  Свържи се с нас и ще уточним наличност, цена, доставка
-                  или вземане от магазина.
+                  Свържете се с нас при въпроси или използвайте формата за
+                  поръчка. Ние ще се свържем с Вас за потвърждение и
+                  уточняване на доставката.
                 </p>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -722,8 +727,8 @@ export default function ProductCatalog() {
                     Бургас · Музикален магазин
                   </h3>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Лична консултация, проверка на наличност и изпращане след
-                    уговорка.
+                    Лично обслужване, консултация и съдействие при избор на
+                    продукт.
                   </p>
                 </div>
 
@@ -732,7 +737,7 @@ export default function ProductCatalog() {
                   <p>Музикални инструменти</p>
                   <p>Студио оборудване</p>
                   <p>Аксесоари</p>
-                  <p>Каталог с цени и директно запитване</p>
+                  <p>Запитване, поръчка и доставка след потвърждение</p>
                 </div>
               </div>
             </div>
@@ -747,13 +752,14 @@ export default function ProductCatalog() {
                   Как работи
                 </p>
                 <h2 className="mt-3 text-4xl font-black md:text-5xl">
-                  Каталог без количка и онлайн плащане
+                  Запитване или поръчка в няколко стъпки
                 </h2>
               </div>
 
               <p className="max-w-xl text-slate-400">
-                Целта е клиентът да избере продукт и да се свърже с магазина.
-                Така потвърждаваме наличност и детайли преди изпращане.
+                Когато изберете желания продукт, можете да направите запитване
+                при въпроси или да изпратите директна заявка чрез формата за
+                поръчка.
               </p>
             </div>
 

@@ -63,7 +63,7 @@ const categoryVisuals: Record<
 
 function makeWhatsappLink(productName?: string) {
   const message = productName
-    ? `Здравейте, интересувам се от ${productName}. Наличен ли е продуктът и как мога да го получа?`
+    ? `Здравейте, интересувам се от ${productName}. Моля за повече информация.`
     : "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
 
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
@@ -281,7 +281,7 @@ function ProductsPageContent() {
                 Продукти
               </a>
               <a href="/request" className="hover:text-white">
-                Заявка
+                Поръчка / доставка
               </a>
             </nav>
 
@@ -299,7 +299,7 @@ function ProductsPageContent() {
         <section className="py-14 md:py-20">
           <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-8 md:p-12">
             <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
-              SKY MUSIC BG каталог
+              SKY MUSIC BG продукти
             </p>
 
             <div className="mt-5 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -308,8 +308,9 @@ function ProductsPageContent() {
                   Всички продукти
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-                  Разгледай продуктите по категория, марка или търсене. Няма
-                  онлайн количка — уточняваме наличност, цена и доставка лично.
+                  Разгледайте продуктите по категория, марка или търсене.
+                  Отворете желания продукт, изпратете запитване при въпроси или
+                  направете поръчка чрез формата за заявка.
                 </p>
               </div>
 
@@ -412,7 +413,7 @@ function ProductsPageContent() {
                   id="product-search-page"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Търси продукт, марка или категория..."
+                  placeholder="Търсете продукт, марка или категория..."
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
                 />
               </div>
@@ -577,7 +578,7 @@ function ProductsPageContent() {
                             Детайли
                           </p>
                           <p className="mt-1 text-sm text-slate-300">
-                            Отвори продукта
+                            Отворете продукта
                           </p>
                         </div>
                       </div>
@@ -589,7 +590,7 @@ function ProductsPageContent() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
                       >
-                        Виж продукта
+                        Вижте продукта
                       </a>
 
                       <a
@@ -607,7 +608,7 @@ function ProductsPageContent() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
                       >
-                        Обади се
+                        Обадете се
                       </a>
 
                       <a
@@ -615,7 +616,7 @@ function ProductsPageContent() {
                         onClick={(event) => event.stopPropagation()}
                         className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                       >
-                        Остави данни
+                        Поръчка / доставка
                       </a>
                     </div>
                   </div>
@@ -628,7 +629,7 @@ function ProductsPageContent() {
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center">
               <p className="text-xl font-bold">Няма намерени продукти.</p>
               <p className="mt-2 text-slate-400">
-                Пробвай друга категория, марка или изчисти филтрите.
+                Променете категорията, марката или изчистете филтрите.
               </p>
 
               <button
