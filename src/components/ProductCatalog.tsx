@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import { categories, products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -39,6 +38,41 @@ const brandBanners = [
     name: "Behringer",
     label: "BEHRINGER",
     subtitle: "Студио и live sound техника",
+  },
+];
+
+const shoppingPaths = [
+  {
+    title: "За китаристи",
+    description:
+      "Китари, аксесоари, кабели и оборудване за репетиции, сцена и домашно свирене.",
+    href: "/products?category=Струнни%20инструменти",
+    icon: "🎸",
+    tag: "Струнни инструменти",
+  },
+  {
+    title: "За вокал и сцена",
+    description:
+      "Микрофони, сценични решения и техника за репетиции, участия и live sound.",
+    href: "/products?category=Микрофони",
+    icon: "🎤",
+    tag: "Микрофони",
+  },
+  {
+    title: "За домашно студио",
+    description:
+      "Аудио интерфейси, мониторинг, студио оборудване и решения за запис.",
+    href: "/products?category=Студио%20оборудване",
+    icon: "🎚️",
+    tag: "Студио оборудване",
+  },
+  {
+    title: "За клавиристи",
+    description:
+      "Клавишни инструменти, синтезатори и решения за учене, сцена и студио.",
+    href: "/products?category=Клавишни%20инструменти",
+    icon: "🎹",
+    tag: "Клавишни инструменти",
   },
 ];
 
@@ -93,21 +127,23 @@ const howItWorks = [
     step: "01",
     title: "Разглеждаш каталога",
     description:
-      "Избираш категория, търсиш по име, марка или отваряш конкретен продукт.",
+      "Избираш категория, марка или конкретен продукт от каталога.",
   },
   {
     step: "02",
     title: "Пишеш или оставяш данни",
     description:
-      "Можеш да изпратиш директно WhatsApp запитване или да отвориш страница за заявка с данни за доставка.",
+      "Можеш да изпратиш WhatsApp запитване или да оставиш данни за доставка.",
   },
   {
     step: "03",
     title: "Уточняваме детайлите",
     description:
-      "Потвърждаваме наличност, крайна цена, доставка или вземане от магазина в Бургас.",
+      "Потвърждаваме наличност, крайна цена, доставка или вземане от магазина.",
   },
 ];
+
+const featuredProducts = products.slice(0, 6);
 
 function makeWhatsappLink(productName?: string) {
   const message = productName
@@ -161,27 +197,6 @@ function getStatusClass(status: string) {
 }
 
 export default function ProductCatalog() {
-  const [selectedCategory, setSelectedCategory] = useState("Всички");
-  const [search, setSearch] = useState("");
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return products.filter((product) => {
-      const matchesCategory =
-        selectedCategory === "Всички" || product.category === selectedCategory;
-
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        product.name.toLowerCase().includes(normalizedSearch) ||
-        product.brand.toLowerCase().includes(normalizedSearch) ||
-        product.category.toLowerCase().includes(normalizedSearch) ||
-        product.description.toLowerCase().includes(normalizedSearch);
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [selectedCategory, search]);
-
   function openProduct(productId: string) {
     window.location.href = makeProductLink(productId);
   }
@@ -217,11 +232,11 @@ export default function ProductCatalog() {
               <a href="/products" className="hover:text-white">
                 Продукти
               </a>
-              <a href="/request" className="hover:text-white">
-                Заявка
-              </a>
               <a href="#brands" className="hover:text-white">
                 Марки
+              </a>
+              <a href="#directions" className="hover:text-white">
+                Насоки
               </a>
               <a href="#contact" className="hover:text-white">
                 Контакти
@@ -250,9 +265,9 @@ export default function ProductCatalog() {
             </h1>
 
             <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-300">
-              Разгледай продуктите на SKY MUSIC BG. Ако нещо ти хареса,
-              свържи се с нас по WhatsApp, Messenger, телефон или остави
-              данни за заявка и доставка.
+              SKY MUSIC BG е каталог за музиканти, студиа и сцена. Разгледай
+              продукти, избери марка или категория и се свържи с нас за
+              наличност, цена и доставка.
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
@@ -296,11 +311,11 @@ export default function ProductCatalog() {
                     SKY MUSIC BG
                   </p>
                   <h2 className="mt-4 text-3xl font-black leading-tight">
-                    Каталог за музиканти, студиа и сцена
+                    Избери категория и започни оттам
                   </h2>
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Разгледай инструменти, микрофони, студио техника и
-                    аксесоари. Изпрати запитване или остави данни за доставка.
+                    Всеки сегмент отваря каталога вече филтриран по съответната
+                    категория.
                   </p>
                 </div>
 
@@ -356,7 +371,7 @@ export default function ProductCatalog() {
               </h2>
               <p className="mt-4 max-w-2xl text-slate-400">
                 Избери марка и отвори каталога филтриран само по нея. По-късно
-                тук ще добавим реални лога на брандовете.
+                ще заменим текстовите банери с реални лога.
               </p>
             </div>
 
@@ -392,57 +407,79 @@ export default function ProductCatalog() {
           </div>
         </section>
 
+        <section id="directions" className="py-14">
+          <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-8 md:p-12">
+            <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
+                  Избор според нуждата
+                </p>
+                <h2 className="mt-3 text-4xl font-black md:text-5xl">
+                  Намери правилното оборудване по-бързо
+                </h2>
+              </div>
+
+              <p className="max-w-xl text-slate-400">
+                Вместо да търсиш на сляпо, започни от конкретна посока —
+                китара, вокал, домашно студио или клавишни инструменти.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {shoppingPaths.map((path) => (
+                <a
+                  key={path.title}
+                  href={path.href}
+                  className="group rounded-[1.7rem] border border-white/10 bg-white/[0.04] p-6 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
+                >
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-4xl">
+                    {path.icon}
+                  </div>
+
+                  <p className="mt-6 text-xs font-black uppercase tracking-[0.25em] text-sky-300">
+                    {path.tag}
+                  </p>
+
+                  <h3 className="mt-3 text-2xl font-black">{path.title}</h3>
+
+                  <p className="mt-4 text-sm leading-6 text-slate-400">
+                    {path.description}
+                  </p>
+
+                  <p className="mt-6 text-sm font-black text-white transition group-hover:text-sky-200">
+                    Отвори категорията →
+                  </p>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="products" className="py-10">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
-                Каталог
+                Подбор
               </p>
               <h2 className="mt-3 text-4xl font-black md:text-5xl">
-                Продукти в магазина
+                Избрани продукти
               </h2>
               <p className="mt-4 max-w-2xl text-slate-400">
-                Кликни върху продуктова карта за детайли или използвай бутоните
-                за запитване, обаждане и заявка за доставка.
+                Кратък начален подбор. За пълния каталог, филтри по марка и
+                категории отвори страницата с всички продукти.
               </p>
             </div>
 
-            <div className="w-full md:max-w-sm">
-              <label className="sr-only" htmlFor="product-search">
-                Търси продукт
-              </label>
-              <input
-                id="product-search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Търси продукт, марка или категория..."
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-              />
-            </div>
-          </div>
-
-          <div className="mt-8 flex gap-3 overflow-x-auto pb-3">
-            {categories.map((category) => {
-              const active = selectedCategory === category;
-
-              return (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={
-                    active
-                      ? "whitespace-nowrap rounded-full bg-sky-400 px-5 py-3 text-sm font-black text-black"
-                      : "whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 hover:bg-white/10"
-                  }
-                >
-                  {category}
-                </button>
-              );
-            })}
+            <a
+              href="/products"
+              className="rounded-full bg-white px-6 py-3 text-center text-sm font-black text-black transition hover:bg-slate-200"
+            >
+              Виж всички продукти
+            </a>
           </div>
 
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filteredProducts.map((product) => {
+            {featuredProducts.map((product) => {
               const visual = getCategoryVisual(product.category);
 
               return (
@@ -564,15 +601,6 @@ export default function ProductCatalog() {
               );
             })}
           </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center">
-              <p className="text-xl font-bold">Няма намерени продукти.</p>
-              <p className="mt-2 text-slate-400">
-                Пробвай друга категория или изчисти търсенето.
-              </p>
-            </div>
-          )}
         </section>
 
         <section
