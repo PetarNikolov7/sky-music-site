@@ -476,6 +476,7 @@ function ProductsPageContent() {
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filteredProducts.map((product) => {
               const visual = getCategoryVisual(product.category);
+              const productBadges = product.badges?.slice(0, 3) ?? [];
 
               return (
                 <article
@@ -512,9 +513,22 @@ function ProductsPageContent() {
                     </div>
 
                     <div className="relative">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
-                        {visual.icon}
-                      </div>
+                      {product.image ? (
+                        <div className="relative h-24 w-32 overflow-hidden rounded-3xl border border-white/10 bg-white/10 shadow-2xl shadow-black/20">
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            sizes="160px"
+                            className="object-contain p-3"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
+                          {visual.icon}
+                        </div>
+                      )}
+
                       <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
                         {visual.subtitle}
                       </p>
@@ -533,6 +547,19 @@ function ProductsPageContent() {
                     <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
                       {product.description}
                     </p>
+
+                    {productBadges.length > 0 && (
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {productBadges.map((badge) => (
+                          <span
+                            key={badge}
+                            className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-sky-100"
+                          >
+                            {badge}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
                       <div className="flex items-center justify-between gap-4">

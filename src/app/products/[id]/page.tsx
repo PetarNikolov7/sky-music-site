@@ -118,7 +118,7 @@ export async function generateMetadata({
       type: "website",
       images: [
         {
-          url: "/sky-music-logo-dark-header.png",
+          url: product.image || "/sky-music-logo-dark-header.png",
           width: 1200,
           height: 630,
           alt: product.name,
@@ -137,6 +137,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   const visual = getCategoryVisual(product.category);
+  const productBadges = product.badges ?? [];
+  const productSpecs = product.specs ?? [];
 
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
@@ -203,13 +205,39 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                   </span>
                 </div>
 
-                <div className="mt-16 flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/10 bg-white/10 text-7xl shadow-2xl shadow-black/20">
-                  {visual.icon}
-                </div>
+                {product.image ? (
+                  <div className="relative mt-10 h-80 overflow-hidden rounded-[2rem] border border-white/10 bg-white/10">
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 45vw"
+                      className="object-contain p-8"
+                      priority
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-16 flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/10 bg-white/10 text-7xl shadow-2xl shadow-black/20">
+                    {visual.icon}
+                  </div>
+                )}
 
                 <p className="mt-8 max-w-md text-lg leading-8 text-slate-200">
                   {visual.subtitle}
                 </p>
+
+                {productBadges.length > 0 && (
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {productBadges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -257,6 +285,28 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </div>
             </div>
 
+            {productSpecs.length > 0 && (
+              <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
+                <h2 className="text-2xl font-black">Основни характеристики</h2>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {productSpecs.map((spec) => (
+                    <div
+                      key={`${spec.label}-${spec.value}`}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    >
+                      <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                        {spec.label}
+                      </p>
+                      <p className="mt-2 text-sm font-bold leading-6 text-slate-200">
+                        {spec.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mt-8 rounded-[2rem] border border-sky-400/20 bg-sky-400/10 p-6">
               <h2 className="text-2xl font-black">Как да го заявиш?</h2>
               <p className="mt-3 leading-7 text-slate-300">
@@ -285,7 +335,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
               <a
                 href={makeRequestLink(product.name)}
-                className="sm:col-span-2 rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01]"
+                className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] sm:col-span-2"
               >
                 Остави данни за доставка
               </a>
