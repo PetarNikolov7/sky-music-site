@@ -347,7 +347,7 @@ function ProductsPageContent() {
                   onClick={clearFilters}
                   className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/10"
                 >
-                  Изчисти филтрите
+                  Изчистете филтрите
                 </button>
               </div>
             )}
@@ -478,6 +478,7 @@ function ProductsPageContent() {
             {filteredProducts.map((product) => {
               const visual = getCategoryVisual(product.category);
               const productBadges = product.badges?.slice(0, 3) ?? [];
+              const hasImage = Boolean(product.image);
 
               return (
                 <article
@@ -494,16 +495,48 @@ function ProductsPageContent() {
                   className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
                 >
                   <div
-                    className="relative flex h-60 flex-col justify-between overflow-hidden p-6"
-                    style={{ background: visual.gradient }}
+                    className={`relative h-72 overflow-hidden ${
+                      hasImage ? "bg-white" : ""
+                    }`}
+                    style={hasImage ? undefined : { background: visual.gradient }}
                   >
-                    <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
-                    <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
+                    {hasImage ? (
+                      <>
+                        <Image
+                          src={product.image as string}
+                          alt={product.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          className="object-contain p-6 transition duration-500 group-hover:scale-105"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
+                        <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
 
-                    <div className="relative flex items-start justify-between gap-4">
-                      <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10">
+                        <div className="absolute bottom-6 left-6">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
+                            {visual.icon}
+                          </div>
+                          <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
+                            {visual.subtitle}
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="absolute left-6 right-6 top-6 flex items-start justify-between gap-4">
+                      <span
+                        className={
+                          hasImage
+                            ? "rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white ring-1 ring-black/10 backdrop-blur"
+                            : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
+                        }
+                      >
                         {product.category}
                       </span>
+
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
                           product.status,
@@ -511,28 +544,6 @@ function ProductsPageContent() {
                       >
                         {product.status}
                       </span>
-                    </div>
-
-                    <div className="relative">
-                      {product.image ? (
-                        <div className="relative h-24 w-32 overflow-hidden rounded-3xl border border-white/10 bg-white/10 shadow-2xl shadow-black/20">
-                          <Image
-                            src={product.image}
-                            alt={product.name}
-                            fill
-                            sizes="160px"
-                            className="object-contain p-3"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
-                          {visual.icon}
-                        </div>
-                      )}
-
-                      <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
-                        {visual.subtitle}
-                      </p>
                     </div>
                   </div>
 
@@ -637,7 +648,7 @@ function ProductsPageContent() {
                 onClick={clearFilters}
                 className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
               >
-                Изчисти филтрите
+                Изчистете филтрите
               </button>
             </div>
           )}

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import ProductImageGallery from "@/components/ProductImageGallery";
 import { products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -139,6 +140,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const visual = getCategoryVisual(product.category);
   const productBadges = product.badges ?? [];
   const productSpecs = product.specs ?? [];
+  const galleryImages =
+    product.images && product.images.length > 0
+      ? product.images
+      : product.image
+        ? [product.image]
+        : [];
 
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
@@ -183,16 +190,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
         <section className="grid gap-10 py-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
-            <div
-              className="relative overflow-hidden rounded-[2.5rem] border border-white/10 p-8 shadow-2xl shadow-black/40 md:p-10"
-              style={{ background: visual.gradient }}
-            >
-              <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-sky-300/20 blur-3xl" />
-              <div className="absolute -bottom-24 left-12 h-60 w-60 rounded-full bg-blue-500/20 blur-3xl" />
+            {galleryImages.length > 0 ? (
+              <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/40">
+                <ProductImageGallery
+                  productName={product.name}
+                  images={galleryImages}
+                  fallbackImage={product.image}
+                />
 
-              <div className="relative">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-sky-100 ring-1 ring-white/10">
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <span className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-100">
                     {product.category}
                   </span>
 
@@ -205,33 +212,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                   </span>
                 </div>
 
-                {product.image ? (
-                  <div className="relative mt-10 h-80 overflow-hidden rounded-[2rem] border border-white/10 bg-white/10">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 45vw"
-                      className="object-contain p-8"
-                      priority
-                    />
-                  </div>
-                ) : (
-                  <div className="mt-16 flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/10 bg-white/10 text-7xl shadow-2xl shadow-black/20">
-                    {visual.icon}
-                  </div>
-                )}
-
-                <p className="mt-8 max-w-md text-lg leading-8 text-slate-200">
-                  {visual.subtitle}
-                </p>
-
                 {productBadges.length > 0 && (
-                  <div className="mt-6 flex flex-wrap gap-2">
+                  <div className="mt-5 flex flex-wrap gap-2">
                     {productBadges.map((badge) => (
                       <span
                         key={badge}
-                        className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white"
+                        className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-sky-100"
                       >
                         {badge}
                       </span>
@@ -239,7 +225,52 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <div
+                className="relative overflow-hidden rounded-[2.5rem] border border-white/10 p-8 shadow-2xl shadow-black/40 md:p-10"
+                style={{ background: visual.gradient }}
+              >
+                <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-sky-300/20 blur-3xl" />
+                <div className="absolute -bottom-24 left-12 h-60 w-60 rounded-full bg-blue-500/20 blur-3xl" />
+
+                <div className="relative">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-sky-100 ring-1 ring-white/10">
+                      {product.category}
+                    </span>
+
+                    <span
+                      className={`rounded-full px-4 py-2 text-sm font-bold ${getStatusClass(
+                        product.status,
+                      )}`}
+                    >
+                      {product.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-16 flex h-36 w-36 items-center justify-center rounded-[2rem] border border-white/10 bg-white/10 text-7xl shadow-2xl shadow-black/20">
+                    {visual.icon}
+                  </div>
+
+                  <p className="mt-8 max-w-md text-lg leading-8 text-slate-200">
+                    {visual.subtitle}
+                  </p>
+
+                  {productBadges.length > 0 && (
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      {productBadges.map((badge) => (
+                        <span
+                          key={badge}
+                          className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-white"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <a
               href="/products"

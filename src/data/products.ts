@@ -13,8 +13,8 @@ export type Product = {
   description: string;
   imageLabel: string;
 
-  // Нови полета за по-професионални карти и продуктови страници.
   image?: string;
+  images?: string[];
   badges?: string[];
   specs?: ProductSpec[];
   featured?: boolean;
@@ -32,23 +32,37 @@ export const categories = [
 
 export const products: Product[] = [
   {
-    id: "yamaha-pacifica-112v",
-    name: "Yamaha Pacifica 112V",
-    brand: "Yamaha",
+    id: "yamaha-c40",
+    name: "Класическа китара YAMAHA C 40, размер 4/4",
+    brand: "YAMAHA",
     category: "Струнни инструменти",
-    price: "680 лв.",
+    price: "150,00 € / 293,37 лв.",
     status: "Наличен",
     description:
-      "Електрическа китара с универсален звук, подходяща за начинаещи, репетиции и сцена.",
-    imageLabel: "Electric Guitar",
-    image: "",
-    badges: ["Препоръчан", "За начинаещи", "Електрическа китара"],
+      "Класическа китара YAMAHA C 40, размер 4/4, подходяща за обучение, домашно свирене и начинаещи китаристи. Моделът е с натурален цвят, гланцов финиш и найлонови струни.",
+    imageLabel: "Classical Guitar",
+    image: "/products/yamaha-c40-01.webp",
+    images: [
+      "/products/yamaha-c40-01.webp",
+      "/products/yamaha-c40-02.webp",
+      "/products/yamaha-c40-03.webp",
+      "/products/yamaha-c40-04.webp",
+    ],
+    badges: ["YAMAHA", "4/4", "Класическа китара", "Наличен"],
     featured: true,
     specs: [
-      { label: "Тип", value: "Електрическа китара" },
-      { label: "Подходяща за", value: "начинаещи, репетиции и сцена" },
-      { label: "Марка", value: "Yamaha" },
-      { label: "Категория", value: "Струнни инструменти" },
+      { label: "Размер", value: "4/4 стандартен – 39&quot;" },
+      { label: "Челна дъска", value: "Смърч" },
+      { label: "Задна дъска и страници", value: "Meranti" },
+      { label: "Гриф", value: "Палисандър" },
+      { label: "Бридж", value: "Палисандър" },
+      { label: "Ширина на нулево прагче", value: "52 mm" },
+      { label: "Дълбочина на тялото", value: "43–100 mm" },
+      { label: "Скала", value: "650 mm / 25.59&quot;" },
+      { label: "Цвят", value: "Натурален" },
+      { label: "Струни", value: "Найлонови" },
+      { label: "Финиш", value: "Гланц" },
+      { label: "Брой струни", value: "6" },
     ],
   },
   {
