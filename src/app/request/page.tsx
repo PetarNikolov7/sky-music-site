@@ -1,15 +1,30 @@
 "use client";
 
-import Image from "next/image";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { useSearchParams } from "next/navigation";
+import SiteHeader from "@/components/SiteHeader";
 
 const phone = "+359884211761";
 const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
 const messengerUrl = "https://m.me/skymusicbg";
 
-type DeliveryMethod = "Доставка до адрес" | "Вземане от магазина" | "Ще уточним допълнително";
+type DeliveryMethod =
+  | "Доставка до адрес"
+  | "Вземане от магазина"
+  | "Ще уточним допълнително";
+
+const deliveryMethods: DeliveryMethod[] = [
+  "Доставка до адрес",
+  "Вземане от магазина",
+  "Ще уточним допълнително",
+];
 
 function buildWhatsappLink(message: string) {
   return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
@@ -23,8 +38,9 @@ function RequestPageContent() {
   const [name, setName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
-  const [deliveryMethod, setDeliveryMethod] =
-    useState<DeliveryMethod>("Доставка до адрес");
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(
+    "Доставка до адрес",
+  );
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
@@ -61,7 +77,7 @@ function RequestPageContent() {
     note,
   ]);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     window.open(buildWhatsappLink(whatsappMessage), "_blank", "noreferrer");
   }
@@ -69,45 +85,7 @@ function RequestPageContent() {
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <header className="sticky top-0 z-30 -mx-5 border-b border-white/10 bg-[#05070d]/85 px-5 py-4 backdrop-blur-xl md:-mx-8 md:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <a href="/" className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-48 shrink-0 items-center justify-center overflow-hidden sm:w-60">
-                <Image
-                  src="/sky-music-logo-dark-header.png"
-                  alt="SKY MUSIC BG logo"
-                  width={360}
-                  height={120}
-                  className="h-auto w-full object-contain"
-                  priority
-                />
-              </div>
-            </a>
-
-            <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
-              <a href="/" className="hover:text-white">
-                Начало
-              </a>
-              <a href="/products" className="hover:text-white">
-                Продукти
-              </a>
-              <a href="/request" className="text-white">
-                Поръчка / доставка
-              </a>
-            </nav>
-
-            <a
-              href={buildWhatsappLink(
-                "Здравейте, интересувам се от продуктите на SKY MUSIC BG.",
-              )}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
-            >
-              WhatsApp
-            </a>
-          </div>
-        </header>
+        <SiteHeader activePage="request" />
 
         <section className="grid gap-10 py-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
@@ -121,10 +99,10 @@ function RequestPageContent() {
               </h1>
 
               <p className="mt-6 text-lg leading-8 text-slate-300">
-                Попълнете данните за желания продукт и начин на получаване. След
-                изпращане на заявката ние ще се свържем с Вас за потвърждение
-                на поръчката и уточняване на доставката или вземането от
-                магазина.
+                Попълнете данните за желания продукт и начин на получаване.
+                След изпращане на заявката ние ще се свържем с Вас за
+                потвърждение на поръчката и уточняване на доставката или
+                вземането от магазина.
               </p>
 
               <div className="mt-8 grid gap-4">
@@ -132,9 +110,10 @@ function RequestPageContent() {
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
                     Телефон
                   </p>
+
                   <a
                     href={`tel:${phone}`}
-                    className="mt-2 block text-2xl font-black text-white"
+                    className="mt-2 block cursor-pointer text-2xl font-black text-white transition hover:text-sky-200"
                   >
                     {phone}
                   </a>
@@ -144,9 +123,10 @@ function RequestPageContent() {
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
                     Имейл
                   </p>
+
                   <a
                     href={`mailto:${email}`}
-                    className="mt-2 block break-all text-lg font-bold text-white"
+                    className="mt-2 block cursor-pointer break-all text-lg font-bold text-white transition hover:text-sky-200"
                   >
                     {email}
                   </a>
@@ -165,7 +145,7 @@ function RequestPageContent() {
                       )}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+                      className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
                     >
                       WhatsApp
                     </a>
@@ -174,7 +154,7 @@ function RequestPageContent() {
                       href={messengerUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-full bg-blue-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-blue-500"
+                      className="cursor-pointer rounded-full bg-blue-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-blue-500"
                     >
                       Messenger
                     </a>
@@ -185,9 +165,9 @@ function RequestPageContent() {
 
             <a
               href="/products"
-              className="mt-5 inline-flex rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+              className="mt-5 inline-flex cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
-              ← Назад към продуктите
+              ← Назад към категориите
             </a>
           </div>
 
@@ -202,7 +182,7 @@ function RequestPageContent() {
               </h2>
 
               <p className="mt-4 text-sm leading-7 text-slate-400">
-                Попълнете само необходимите данни за връзка и доставка. След
+                Попълнете необходимите данни за връзка и доставка. След
                 изпращане ще се отвори WhatsApp съобщение с готово съдържание,
                 което можете да прегледате преди да го изпратите.
               </p>
@@ -215,6 +195,7 @@ function RequestPageContent() {
                   >
                     Продукт
                   </label>
+
                   <input
                     id="product"
                     value={product}
@@ -233,6 +214,7 @@ function RequestPageContent() {
                     >
                       Име и фамилия
                     </label>
+
                     <input
                       id="name"
                       value={name}
@@ -250,6 +232,7 @@ function RequestPageContent() {
                     >
                       Телефон
                     </label>
+
                     <input
                       id="phone"
                       value={customerPhone}
@@ -268,6 +251,7 @@ function RequestPageContent() {
                   >
                     Имейл
                   </label>
+
                   <input
                     id="email"
                     type="email"
@@ -285,17 +269,20 @@ function RequestPageContent() {
                   >
                     Начин на получаване
                   </label>
+
                   <select
                     id="delivery-method"
                     value={deliveryMethod}
                     onChange={(event) =>
                       setDeliveryMethod(event.target.value as DeliveryMethod)
                     }
-                    className="w-full rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
+                    className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
                   >
-                    <option>Доставка до адрес</option>
-                    <option>Вземане от магазина</option>
-                    <option>Ще уточним допълнително</option>
+                    {deliveryMethods.map((method) => (
+                      <option key={method} value={method}>
+                        {method}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -307,6 +294,7 @@ function RequestPageContent() {
                     >
                       Град
                     </label>
+
                     <input
                       id="city"
                       value={city}
@@ -323,6 +311,7 @@ function RequestPageContent() {
                     >
                       Адрес или офис за доставка
                     </label>
+
                     <input
                       id="address"
                       value={address}
@@ -340,6 +329,7 @@ function RequestPageContent() {
                   >
                     Бележка към поръчката
                   </label>
+
                   <textarea
                     id="note"
                     value={note}
@@ -352,7 +342,7 @@ function RequestPageContent() {
 
                 <button
                   type="submit"
-                  className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01]"
+                  className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01]"
                 >
                   Изпратете заявката в WhatsApp
                 </button>
@@ -390,7 +380,9 @@ function RequestPageContent() {
                     <p className="text-sm font-black text-sky-300">
                       {item.step}
                     </p>
+
                     <h4 className="mt-3 font-black">{item.title}</h4>
+
                     <p className="mt-3 text-sm leading-6 text-slate-400">
                       {item.description}
                     </p>

@@ -1,7 +1,7 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import SiteHeader from "@/components/SiteHeader";
 import { products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -175,49 +175,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <header className="sticky top-0 z-30 -mx-5 border-b border-white/10 bg-[#05070d]/85 px-5 py-4 backdrop-blur-xl md:-mx-8 md:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <a href="/" className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-48 shrink-0 items-center justify-center overflow-hidden sm:w-60">
-                <Image
-                  src="/sky-music-logo-dark-header.png"
-                  alt="SKY MUSIC BG logo"
-                  width={360}
-                  height={120}
-                  className="h-auto w-full object-contain"
-                  priority
-                />
-              </div>
-            </a>
-
-            <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
-              <a href="/" className="hover:text-white">
-                Начало
-              </a>
-              <a href="/products" className="hover:text-white">
-                Продукти
-              </a>
-              <a href="/request" className="hover:text-white">
-                Поръчка / доставка
-              </a>
-            </nav>
-
-            <a
-              href={makeWhatsappLink(product.name)}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
-            >
-              WhatsApp
-            </a>
-          </div>
-        </header>
+        <SiteHeader activePage="products" />
 
         <nav
           aria-label="Навигация по продуктите"
           className="flex flex-wrap items-center gap-2 pt-9 text-sm text-slate-400"
         >
-          <a href="/products" className="transition hover:text-white">
+          <a
+            href="/products"
+            className="cursor-pointer transition hover:text-white"
+          >
             Продукти
           </a>
 
@@ -225,7 +192,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           <a
             href={makeCategoryLink(product.category)}
-            className="transition hover:text-white"
+            className="cursor-pointer transition hover:text-white"
           >
             {product.category}
           </a>
@@ -234,7 +201,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           <a
             href={makeSubcategoryLink(product.category, product.subcategory)}
-            className="font-bold text-sky-300 transition hover:text-sky-200"
+            className="cursor-pointer font-bold text-sky-300 transition hover:text-sky-200"
           >
             {product.subcategory}
           </a>
@@ -256,7 +223,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                       product.category,
                       product.subcategory,
                     )}
-                    className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-100 transition hover:bg-white/15"
+                    className="cursor-pointer rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-100 transition hover:bg-white/15"
                   >
                     {product.subcategory}
                   </a>
@@ -332,7 +299,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
             <a
               href={makeSubcategoryLink(product.category, product.subcategory)}
-              className="mt-5 inline-flex rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+              className="mt-5 inline-flex cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
               ← Назад към {product.subcategory}
             </a>
@@ -405,6 +372,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
             <div className="mt-8 rounded-[2rem] border border-sky-400/20 bg-sky-400/10 p-6">
               <h2 className="text-2xl font-black">Запитване или поръчка</h2>
+
               <p className="mt-3 leading-7 text-slate-300">
                 Ако имате въпроси за този продукт, можете да изпратите
                 запитване в WhatsApp или да се свържете с нас по телефон. Ако
@@ -418,21 +386,21 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 href={makeWhatsappLink(product.name)}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full bg-white px-6 py-4 text-center font-black text-black transition hover:bg-sky-100"
+                className="cursor-pointer rounded-full bg-white px-6 py-4 text-center font-black text-black transition hover:bg-sky-100"
               >
                 Запитване в WhatsApp
               </a>
 
               <a
                 href={`tel:${phone}`}
-                className="rounded-full border border-white/10 bg-white/5 px-6 py-4 text-center font-black text-white transition hover:bg-white/10"
+                className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-4 text-center font-black text-white transition hover:bg-white/10"
               >
                 Обадете се
               </a>
 
               <a
                 href={makeRequestLink(product.name)}
-                className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] sm:col-span-2"
+                className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] sm:col-span-2"
               >
                 Поръчка / доставка
               </a>

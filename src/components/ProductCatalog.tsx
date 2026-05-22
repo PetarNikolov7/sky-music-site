@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import HomeBannerSlideshow from "@/components/HomeBannerSlideshow";
+import SiteHeader from "@/components/SiteHeader";
 import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -196,55 +197,7 @@ export default function ProductCatalog() {
   return (
     <main className="min-h-screen bg-[#05070d] text-white">
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
-        <header className="sticky top-0 z-30 -mx-5 border-b border-white/10 bg-[#05070d]/85 px-5 py-4 backdrop-blur-xl md:-mx-8 md:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <a href="/" className="flex min-w-0 items-center gap-4">
-              <div className="flex h-14 w-48 shrink-0 items-center justify-center overflow-hidden sm:w-60">
-                <Image
-                  src="/sky-music-logo-dark-header.png"
-                  alt="SKY MUSIC BG logo"
-                  width={360}
-                  height={120}
-                  className="h-auto w-full object-contain"
-                  priority
-                />
-              </div>
-
-              <div className="hidden lg:block">
-                <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                  Музикален магазин в Бургас
-                </p>
-                <p className="text-sm font-bold text-slate-300">
-                  Инструменти · Студио · Аксесоари
-                </p>
-              </div>
-            </a>
-
-            <nav className="hidden items-center gap-8 text-sm text-slate-300 md:flex">
-              <a href="/products" className="hover:text-white">
-                Продукти
-              </a>
-              <a href="#brands" className="hover:text-white">
-                Марки
-              </a>
-              <a href="#directions" className="hover:text-white">
-                Насоки
-              </a>
-              <a href="#contact" className="hover:text-white">
-                Контакти
-              </a>
-            </nav>
-
-            <a
-              href={makeWhatsappLink()}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200"
-            >
-              WhatsApp
-            </a>
-          </div>
-        </header>
+        <SiteHeader activePage="home" />
 
         <HomeBannerSlideshow />
 
