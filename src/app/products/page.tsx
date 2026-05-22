@@ -9,11 +9,12 @@ import {
   useState,
   type WheelEvent,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { categories, products } from "@/data/products";
 
 const phone = "+359884211761";
 const whatsappNumber = "359884211761";
+const allSubcategoriesLabel = "Всички подкатегории";
 
 const categoryVisuals: Record<
   string,
@@ -81,11 +82,22 @@ function makeProductLink(productId: string) {
   return `/products/${productId}`;
 }
 
-function makeProductsUrl(category: string, brand: string) {
+function makeProductsUrl(
+  category: string,
+  subcategory: string,
+  brand: string,
+) {
   const params = new URLSearchParams();
 
   if (category !== "Всички") {
     params.set("category", category);
+  }
+
+  if (
+    category !== "Всички" &&
+    subcategory !== allSubcategoriesLabel
+  ) {
+    params.set("subcategory", subcategory);
   }
 
   if (brand !== "Всички марки") {
@@ -121,95 +133,141 @@ function getStatusClass(status: string) {
 }
 
 function ProductsPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const categoryFromUrl = searchParams.get("category");
+  const subcategoryFromUrl = searchParams.get("subcategory");
   const brandFromUrl = searchParams.get("brand");
+
+  const [selectedCategory, setSelectedCategory] = useState("Всички");
+  const [selectedSubcategory, setSelectedSubcategory] = useState(
+    allSubcategoriesLabel,
+  );
+  const [selectedBrand, setSelectedBrand] = useState("Всички марки");
+  const [search, setSearch] = useState("");
+
+  const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+  const subcategoryScrollerRef = useRef<HTMLDivElement | null>(null);
+  const brandScrollerRef = useRef<HTMLDivElement | null>(null);
 
   const allBrands = useMemo(() => {
     const brands = Array.from(
       new Set(products.map((product) => product.brand).filter(Boolean)),
-    ).sort((a, b) => a.localeCompare(b));
+    ).sort((a, b) => a.localeCompare(b, "bg"));
 
     return ["Всички марки", ...brands];
   }, []);
 
-  const [selectedCategory, setSelectedCategory] = useState("Всички");
-  const [selectedBrand, setSelectedBrand] = useState("Всички марки");
-  const [search, setSearch] = useState("");
-  const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
-  const brandScrollerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
-      setSelectedCategory(categoryFromUrl);
-    } else {
-      setSelectedCategory("Всички");
+  const availableSubcategories = useMemo(() => {
+    if (selectedCategory === "Всички") {
+      return [];
     }
-  }, [categoryFromUrl]);
+
+    const subcategories = Array.from(
+      new Set(
+        products
+          .filter((product) => product.category === selectedCategory)
+          .map((product) => product.subcategory),
+      ),
+    ).sort((a, b) => a.localeCompare(b, "bg"));
+
+    return [allSubcategoriesLabel, ...subcategories];
+  }, [selectedCategory]);
 
   useEffect(() => {
-    if (brandFromUrl) {
+    const validCategory =
+      categoryFromUrl && categories.includes(categoryFromUrl)
+        ? categoryFromUrl
+        : "Всички";
+
+    const validSubcategories =
+      validCategory === "Всички"
+        ? []
+        : products
+            .filter((product) => product.category === validCategory)
+            .map((product) => product.subcategory);
+
+    setSelectedCategory(validCategory);
+
+    if (
+      subcategoryFromUrl &&
+      validSubcategories.includes(subcategoryFromUrl)
+    ) {
+      setSelectedSubcategory(subcategoryFromUrl);
+    } else {
+      setSelectedSubcategory(allSubcategoriesLabel);
+    }
+  }, [categoryFromUrl, subcategoryFromUrl]);
+
+  useEffect(() => {
+    if (brandFromUrl && allBrands.includes(brandFromUrl)) {
       setSelectedBrand(brandFromUrl);
     } else {
       setSelectedBrand("Всички марки");
     }
-  }, [brandFromUrl]);
+  }, [brandFromUrl, allBrands]);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
     return products.filter((product) => {
       const matchesCategory =
-        selectedCategory === "Всички" || product.category === selectedCategory;
+        selectedCategory === "Всички" ||
+        product.category === selectedCategory;
+
+      const matchesSubcategory =
+        selectedSubcategory === allSubcategoriesLabel ||
+        product.subcategory === selectedSubcategory;
 
       const matchesBrand =
-        selectedBrand === "Всички марки" || product.brand === selectedBrand;
+        selectedBrand === "Всички марки" ||
+        product.brand === selectedBrand;
 
       const matchesSearch =
         normalizedSearch.length === 0 ||
         product.name.toLowerCase().includes(normalizedSearch) ||
         product.brand.toLowerCase().includes(normalizedSearch) ||
         product.category.toLowerCase().includes(normalizedSearch) ||
+        product.subcategory.toLowerCase().includes(normalizedSearch) ||
         product.description.toLowerCase().includes(normalizedSearch);
 
-      return matchesCategory && matchesBrand && matchesSearch;
+      return (
+        matchesCategory &&
+        matchesSubcategory &&
+        matchesBrand &&
+        matchesSearch
+      );
     });
-  }, [selectedCategory, selectedBrand, search]);
+  }, [selectedCategory, selectedSubcategory, selectedBrand, search]);
 
-  function scrollCategories(direction: "left" | "right") {
-    const scroller = categoryScrollerRef.current;
+  function scrollRow(
+    ref: React.RefObject<HTMLDivElement | null>,
+    direction: "left" | "right",
+    distance: number,
+  ) {
+    const scroller = ref.current;
 
     if (!scroller) {
       return;
     }
 
     scroller.scrollBy({
-      left: direction === "left" ? -260 : 260,
-      behavior: "smooth",
-    });
-  }
-
-  function scrollBrands(direction: "left" | "right") {
-    const scroller = brandScrollerRef.current;
-
-    if (!scroller) {
-      return;
-    }
-
-    scroller.scrollBy({
-      left: direction === "left" ? -220 : 220,
+      left: direction === "left" ? -distance : distance,
       behavior: "smooth",
     });
   }
 
   function handleHorizontalWheel(
     event: WheelEvent<HTMLDivElement>,
-    target: "category" | "brand",
+    target: "category" | "subcategory" | "brand",
   ) {
     const scroller =
       target === "category"
         ? categoryScrollerRef.current
-        : brandScrollerRef.current;
+        : target === "subcategory"
+          ? subcategoryScrollerRef.current
+          : brandScrollerRef.current;
 
     if (!scroller) {
       return;
@@ -223,27 +281,38 @@ function ProductsPageContent() {
 
   function selectCategory(category: string) {
     setSelectedCategory(category);
-    window.history.replaceState(
-      null,
-      "",
-      makeProductsUrl(category, selectedBrand),
+    setSelectedSubcategory(allSubcategoriesLabel);
+
+    router.replace(
+      makeProductsUrl(category, allSubcategoriesLabel, selectedBrand),
+      { scroll: false },
+    );
+  }
+
+  function selectSubcategory(subcategory: string) {
+    setSelectedSubcategory(subcategory);
+
+    router.replace(
+      makeProductsUrl(selectedCategory, subcategory, selectedBrand),
+      { scroll: false },
     );
   }
 
   function selectBrand(brand: string) {
     setSelectedBrand(brand);
-    window.history.replaceState(
-      null,
-      "",
-      makeProductsUrl(selectedCategory, brand),
+
+    router.replace(
+      makeProductsUrl(selectedCategory, selectedSubcategory, brand),
+      { scroll: false },
     );
   }
 
   function clearFilters() {
     setSelectedCategory("Всички");
+    setSelectedSubcategory(allSubcategoriesLabel);
     setSelectedBrand("Всички марки");
     setSearch("");
-    window.history.replaceState(null, "", "/products");
+    router.replace("/products", { scroll: false });
   }
 
   function openProduct(productId: string) {
@@ -252,6 +321,7 @@ function ProductsPageContent() {
 
   const hasActiveFilter =
     selectedCategory !== "Всички" ||
+    selectedSubcategory !== allSubcategoriesLabel ||
     selectedBrand !== "Всички марки" ||
     search.trim().length > 0;
 
@@ -308,8 +378,8 @@ function ProductsPageContent() {
                   Всички продукти
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
-                  Разгледайте продуктите по категория, марка или търсене.
-                  Отворете желания продукт, изпратете запитване при въпроси или
+                  Разгледайте продуктите по категория, вид или марка. Отворете
+                  желания продукт, изпратете запитване при въпроси или
                   направете поръчка чрез формата за заявка.
                 </p>
               </div>
@@ -317,7 +387,9 @@ function ProductsPageContent() {
               <div className="rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5">
                 <p className="text-3xl font-black">{filteredProducts.length}</p>
                 <p className="mt-1 text-sm text-slate-300">
-                  намерени продукта
+                  {filteredProducts.length === 1
+                    ? "намерен продукт"
+                    : "намерени продукта"}
                 </p>
               </div>
             </div>
@@ -327,6 +399,12 @@ function ProductsPageContent() {
                 {selectedCategory !== "Всички" && (
                   <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-bold text-sky-100">
                     Категория: {selectedCategory}
+                  </span>
+                )}
+
+                {selectedSubcategory !== allSubcategoriesLabel && (
+                  <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-bold text-cyan-100">
+                    Вид: {selectedSubcategory}
                   </span>
                 )}
 
@@ -355,17 +433,23 @@ function ProductsPageContent() {
         </section>
 
         <section className="pb-10">
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-center">
               <div className="relative min-w-0 flex-1">
-                <div className="pointer-events-none absolute left-12 top-0 z-10 h-full w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
-                <div className="pointer-events-none absolute right-12 top-0 z-10 h-full w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
+                <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+                  Категории
+                </p>
+
+                <div className="pointer-events-none absolute left-12 top-9 z-10 h-12 w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
+                <div className="pointer-events-none absolute right-12 top-9 z-10 h-12 w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
 
                 <button
                   type="button"
-                  onClick={() => scrollCategories("left")}
+                  onClick={() =>
+                    scrollRow(categoryScrollerRef, "left", 260)
+                  }
                   aria-label="Предишни категории"
-                  className="absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                  className="absolute left-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
                 >
                   ‹
                 </button>
@@ -397,31 +481,96 @@ function ProductsPageContent() {
 
                 <button
                   type="button"
-                  onClick={() => scrollCategories("right")}
+                  onClick={() =>
+                    scrollRow(categoryScrollerRef, "right", 260)
+                  }
                   aria-label="Следващи категории"
-                  className="absolute right-0 top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                  className="absolute right-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
                 >
                   ›
                 </button>
               </div>
 
-              <div className="w-full md:max-w-sm">
+              <div className="w-full md:max-w-sm md:pt-9">
                 <label className="sr-only" htmlFor="product-search-page">
-                  Търси продукт
+                  Търсете продукт
                 </label>
                 <input
                   id="product-search-page"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Търсете продукт, марка или категория..."
+                  placeholder="Търсете продукт, марка или вид..."
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
                 />
               </div>
             </div>
 
+            {selectedCategory !== "Всички" &&
+              availableSubcategories.length > 1 && (
+                <div className="relative">
+                  <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+                    Вид продукт
+                  </p>
+
+                  <div className="pointer-events-none absolute left-12 top-9 z-10 h-12 w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
+                  <div className="pointer-events-none absolute right-12 top-9 z-10 h-12 w-10 bg-gradient-to-l from-[#05070d] to-transparent" />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      scrollRow(subcategoryScrollerRef, "left", 240)
+                    }
+                    aria-label="Предишни подкатегории"
+                    className="absolute left-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                  >
+                    ‹
+                  </button>
+
+                  <div
+                    ref={subcategoryScrollerRef}
+                    onWheel={(event) =>
+                      handleHorizontalWheel(event, "subcategory")
+                    }
+                    className="mx-12 flex gap-3 overflow-x-auto px-1 py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  >
+                    {availableSubcategories.map((subcategory) => {
+                      const active = selectedSubcategory === subcategory;
+
+                      return (
+                        <button
+                          key={subcategory}
+                          type="button"
+                          onClick={() => selectSubcategory(subcategory)}
+                          className={
+                            active
+                              ? "whitespace-nowrap rounded-full bg-cyan-300 px-5 py-3 text-sm font-black text-black"
+                              : "whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 hover:bg-white/10"
+                          }
+                        >
+                          {subcategory === allSubcategoriesLabel
+                            ? "Всички в категорията"
+                            : subcategory}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      scrollRow(subcategoryScrollerRef, "right", 240)
+                    }
+                    aria-label="Следващи подкатегории"
+                    className="absolute right-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
+                  >
+                    ›
+                  </button>
+                </div>
+              )}
+
             <div className="relative">
               <p className="mb-3 text-xs font-black uppercase tracking-[0.3em] text-slate-500">
-                Филтър по марка
+                Марки
               </p>
 
               <div className="pointer-events-none absolute left-12 top-9 z-10 h-12 w-10 bg-gradient-to-r from-[#05070d] to-transparent" />
@@ -429,7 +578,7 @@ function ProductsPageContent() {
 
               <button
                 type="button"
-                onClick={() => scrollBrands("left")}
+                onClick={() => scrollRow(brandScrollerRef, "left", 220)}
                 aria-label="Предишни марки"
                 className="absolute left-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
               >
@@ -463,7 +612,7 @@ function ProductsPageContent() {
 
               <button
                 type="button"
-                onClick={() => scrollBrands("right")}
+                onClick={() => scrollRow(brandScrollerRef, "right", 220)}
                 aria-label="Следващи марки"
                 className="absolute right-0 top-[54px] z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/10 bg-white/10 text-lg font-black text-white backdrop-blur transition hover:bg-white/20"
               >
@@ -501,15 +650,13 @@ function ProductsPageContent() {
                     style={hasImage ? undefined : { background: visual.gradient }}
                   >
                     {hasImage ? (
-                      <>
-                        <Image
-                          src={product.image as string}
-                          alt={product.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                          className="object-contain p-6 transition duration-500 group-hover:scale-105"
-                        />
-                      </>
+                      <Image
+                        src={product.image as string}
+                        alt={product.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                        className="object-contain p-6 transition duration-500 group-hover:scale-105"
+                      />
                     ) : (
                       <>
                         <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
@@ -534,7 +681,7 @@ function ProductsPageContent() {
                             : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
                         }
                       >
-                        {product.category}
+                        {product.subcategory}
                       </span>
 
                       <span
@@ -555,6 +702,10 @@ function ProductsPageContent() {
                     <h2 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
                       {product.name}
                     </h2>
+
+                    <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+                      {product.category} · {product.subcategory}
+                    </p>
 
                     <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
                       {product.description}
@@ -640,7 +791,7 @@ function ProductsPageContent() {
             <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center">
               <p className="text-xl font-bold">Няма намерени продукти.</p>
               <p className="mt-2 text-slate-400">
-                Променете категорията, марката или изчистете филтрите.
+                Променете категорията, вида, марката или изчистете филтрите.
               </p>
 
               <button

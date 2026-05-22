@@ -92,6 +92,16 @@ function makeRequestLink(productName: string) {
   return `/request?product=${encodeURIComponent(productName)}`;
 }
 
+function makeCategoryLink(category: string) {
+  return `/products?category=${encodeURIComponent(category)}`;
+}
+
+function makeSubcategoryLink(category: string, subcategory: string) {
+  return `/products?category=${encodeURIComponent(
+    category,
+  )}&subcategory=${encodeURIComponent(subcategory)}`;
+}
+
 export function generateStaticParams() {
   return products.map((product) => ({
     id: product.id,
@@ -112,7 +122,7 @@ export async function generateMetadata({
 
   return {
     title: `${product.name} | SKY MUSIC BG`,
-    description: `${product.name} – ${product.description} Категория: ${product.category}. SKY MUSIC BG, Бургас.`,
+    description: `${product.name} – ${product.description} Вид: ${product.subcategory}. SKY MUSIC BG, Бургас.`,
     openGraph: {
       title: `${product.name} | SKY MUSIC BG`,
       description: product.description,
@@ -188,7 +198,34 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           </div>
         </header>
 
-        <section className="grid gap-10 py-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
+        <nav
+          aria-label="Навигация по продуктите"
+          className="flex flex-wrap items-center gap-2 pt-9 text-sm text-slate-400"
+        >
+          <a href="/products" className="transition hover:text-white">
+            Продукти
+          </a>
+
+          <span className="text-slate-600">→</span>
+
+          <a
+            href={makeCategoryLink(product.category)}
+            className="transition hover:text-white"
+          >
+            {product.category}
+          </a>
+
+          <span className="text-slate-600">→</span>
+
+          <a
+            href={makeSubcategoryLink(product.category, product.subcategory)}
+            className="font-bold text-sky-300 transition hover:text-sky-200"
+          >
+            {product.subcategory}
+          </a>
+        </nav>
+
+        <section className="grid gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
             {galleryImages.length > 0 ? (
               <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/40">
@@ -199,9 +236,15 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 />
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <span className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-100">
-                    {product.category}
-                  </span>
+                  <a
+                    href={makeSubcategoryLink(
+                      product.category,
+                      product.subcategory,
+                    )}
+                    className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-bold text-slate-100 transition hover:bg-white/15"
+                  >
+                    {product.subcategory}
+                  </a>
 
                   <span
                     className={`rounded-full px-4 py-2 text-sm font-bold ${getStatusClass(
@@ -236,7 +279,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 <div className="relative">
                   <div className="flex items-start justify-between gap-4">
                     <span className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-sky-100 ring-1 ring-white/10">
-                      {product.category}
+                      {product.subcategory}
                     </span>
 
                     <span
@@ -273,10 +316,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             )}
 
             <a
-              href="/products"
+              href={makeSubcategoryLink(product.category, product.subcategory)}
               className="mt-5 inline-flex rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
-              ← Назад към всички продукти
+              ← Назад към {product.subcategory}
             </a>
           </div>
 
@@ -293,7 +336,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               {product.description}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
                   Цена
@@ -303,16 +346,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-                  Категория
+                  Наличност
                 </p>
-                <p className="mt-2 font-bold">{product.category}</p>
+                <p className="mt-2 text-lg font-bold">{product.status}</p>
               </div>
 
               <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
                 <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-                  Наличност
+                  Категория
                 </p>
-                <p className="mt-2 font-bold">{product.status}</p>
+                <p className="mt-2 text-lg font-bold">{product.category}</p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+                  Вид продукт
+                </p>
+                <p className="mt-2 text-lg font-bold">{product.subcategory}</p>
               </div>
             </div>
 

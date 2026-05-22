@@ -8,11 +8,11 @@ export type Product = {
   name: string;
   brand: string;
   category: string;
+  subcategory: string;
   price: string;
   status: "Наличен" | "По заявка" | "Изчерпан";
   description: string;
   imageLabel: string;
-
   image?: string;
   images?: string[];
   badges?: string[];
@@ -34,8 +34,9 @@ export const products: Product[] = [
   {
     id: "yamaha-c40",
     name: "Класическа китара YAMAHA C 40, размер 4/4",
-    brand: "YAMAHA",
+    brand: "Yamaha",
     category: "Струнни инструменти",
+    subcategory: "Класически китари",
     price: "150,00 € / 293,37 лв.",
     status: "Наличен",
     description:
@@ -51,14 +52,14 @@ export const products: Product[] = [
     badges: ["YAMAHA", "4/4", "Класическа китара", "Наличен"],
     featured: true,
     specs: [
-      { label: "Размер", value: "4/4 стандартен – 39&quot;" },
+      { label: "Размер", value: '4/4 стандартен – 39"' },
       { label: "Челна дъска", value: "Смърч" },
       { label: "Задна дъска и страници", value: "Meranti" },
       { label: "Гриф", value: "Палисандър" },
       { label: "Бридж", value: "Палисандър" },
       { label: "Ширина на нулево прагче", value: "52 mm" },
       { label: "Дълбочина на тялото", value: "43–100 mm" },
-      { label: "Скала", value: "650 mm / 25.59&quot;" },
+      { label: "Скала", value: '650 mm / 25.59"' },
       { label: "Цвят", value: "Натурален" },
       { label: "Струни", value: "Найлонови" },
       { label: "Финиш", value: "Гланц" },
@@ -70,6 +71,7 @@ export const products: Product[] = [
     name: "Fender CD-60",
     brand: "Fender",
     category: "Струнни инструменти",
+    subcategory: "Акустични китари",
     price: "420 лв.",
     status: "Наличен",
     description:
@@ -90,6 +92,7 @@ export const products: Product[] = [
     name: "Yamaha PSR-E373",
     brand: "Yamaha",
     category: "Клавишни инструменти",
+    subcategory: "Преносими клавири",
     price: "489 лв.",
     status: "По заявка",
     description:
@@ -110,6 +113,7 @@ export const products: Product[] = [
     name: "Shure SM58",
     brand: "Shure",
     category: "Микрофони",
+    subcategory: "Вокални микрофони",
     price: "250 лв.",
     status: "Наличен",
     description:
@@ -130,6 +134,7 @@ export const products: Product[] = [
     name: "Focusrite Scarlett Solo",
     brand: "Focusrite",
     category: "Студио оборудване",
+    subcategory: "Аудио интерфейси",
     price: "315 лв.",
     status: "Наличен",
     description:
@@ -150,6 +155,7 @@ export const products: Product[] = [
     name: "Инструментален кабел 3 м",
     brand: "SKY MUSIC BG",
     category: "Аксесоари",
+    subcategory: "Инструментални кабели",
     price: "24 лв.",
     status: "Наличен",
     description:

@@ -539,7 +539,7 @@ export default function ProductCatalog() {
                             : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
                         }
                       >
-                        {product.category}
+                        {product.subcategory}
                       </span>
 
                       <span
@@ -560,6 +560,10 @@ export default function ProductCatalog() {
                     <h3 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
                       {product.name}
                     </h3>
+
+                    <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+                      {product.category} · {product.subcategory}
+                    </p>
 
                     <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
                       {product.description}
@@ -691,8 +695,8 @@ export default function ProductCatalog() {
                 </h2>
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
                   Свържете се с нас при въпроси или използвайте формата за
-                  поръчка. Ние ще се свържем с Вас за потвърждение и
-                  уточняване на доставката.
+                  поръчка. Ние ще се свържем с Вас за потвърждение и уточняване
+                  на доставката.
                 </p>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
