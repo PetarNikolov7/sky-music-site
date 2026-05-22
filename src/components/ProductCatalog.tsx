@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Image from "next/image";
+import HomeBannerSlideshow from "@/components/HomeBannerSlideshow";
 import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
@@ -245,12 +246,10 @@ export default function ProductCatalog() {
           </div>
         </header>
 
+        <HomeBannerSlideshow />
+
         <section className="grid gap-12 py-16 md:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
-            <div className="mb-6 inline-flex rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-2 text-sm font-medium text-sky-200">
-              Музикален магазин в Бургас · Онлайн заявки и доставка
-            </div>
-
             <h1 className="max-w-4xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
               Музикални инструменти, студио оборудване и аксесоари.
             </h1>
