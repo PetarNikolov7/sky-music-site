@@ -3,6 +3,13 @@ export type ProductSpec = {
   value: string;
 };
 
+export type ProductStatus = "Наличен" | "По заявка" | "Изчерпан";
+
+export type CatalogCategory = {
+  name: string;
+  subcategories: string[];
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -10,7 +17,7 @@ export type Product = {
   category: string;
   subcategory: string;
   price: string;
-  status: "Наличен" | "По заявка" | "Изчерпан";
+  status: ProductStatus;
   description: string;
   imageLabel: string;
   image?: string;
@@ -20,14 +27,103 @@ export type Product = {
   featured?: boolean;
 };
 
+export const catalogCategories: CatalogCategory[] = [
+  {
+    name: "Клавишни",
+    subcategories: [
+      "Дигитални пиана",
+      "Професионални аранжори",
+      "Преносими клавири",
+      "Синтезатори",
+      "MIDI клавиатури",
+      "Педали",
+      "Калъфи",
+      "Стойки",
+      "Столчета",
+      "Слушалки",
+    ],
+  },
+  {
+    name: "Струнни",
+    subcategories: [
+      "Електрически китари",
+      "Акустични китари",
+      "Класически китари",
+      "Китари за деца",
+      "Бас китари",
+      "Китарни пакети",
+      "Цигулки",
+      "Усилватели за китара",
+      "Ефекти и процесори",
+      "Стойки",
+    ],
+  },
+  {
+    name: "Озвучаване",
+    subcategories: [
+      "Тонколони",
+      "Озвучителни системи",
+      "Смесителни пултове",
+      "Усилватели",
+      "Стойки за тонколони",
+    ],
+  },
+  {
+    name: "Ударни",
+    subcategories: [
+      "Барабани",
+      "Рототоми",
+      "Тарамбуки / Перкусии",
+      "Тъпани",
+      "Електронни барабани",
+      "Стойки за барабани и перкусии",
+      "Педали за барабани",
+      "Столчета за барабани",
+      "Палки за барабани",
+    ],
+  },
+  {
+    name: "Духови",
+    subcategories: [
+      "Кларинети",
+      "Саксофони",
+      "Тромпети",
+      "Флейти",
+      "Смазки и препарати",
+      "Мундщуци",
+    ],
+  },
+  {
+    name: "Микрофони",
+    subcategories: [
+      "Кабелни микрофони",
+      "Безжични микрофони",
+      "Микрофони за духови инструменти",
+      "Студийни микрофони",
+    ],
+  },
+  {
+    name: "Студио",
+    subcategories: [
+      "Аудио интерфейси",
+      "Слушалки",
+      "Студийни монитори",
+      "Студийни микрофони",
+    ],
+  },
+  {
+    name: "Аксесоари",
+    subcategories: [
+      "Кабели и конектори",
+      "Стойки",
+      "Калъфи и куфари",
+    ],
+  },
+];
+
 export const categories = [
   "Всички",
-  "Струнни инструменти",
-  "Клавишни инструменти",
-  "Ударни инструменти",
-  "Микрофони",
-  "Студио оборудване",
-  "Аксесоари",
+  ...catalogCategories.map((category) => category.name),
 ];
 
 export const products: Product[] = [
@@ -35,7 +131,7 @@ export const products: Product[] = [
     id: "yamaha-c40",
     name: "Класическа китара YAMAHA C 40, размер 4/4",
     brand: "Yamaha",
-    category: "Струнни инструменти",
+    category: "Струнни",
     subcategory: "Класически китари",
     price: "150,00 € / 293,37 лв.",
     status: "Наличен",
@@ -64,111 +160,6 @@ export const products: Product[] = [
       { label: "Струни", value: "Найлонови" },
       { label: "Финиш", value: "Гланц" },
       { label: "Брой струни", value: "6" },
-    ],
-  },
-  {
-    id: "fender-cd-60",
-    name: "Fender CD-60",
-    brand: "Fender",
-    category: "Струнни инструменти",
-    subcategory: "Акустични китари",
-    price: "420 лв.",
-    status: "Наличен",
-    description:
-      "Акустична китара с балансиран тон и удобен гриф. Подходяща за уроци и домашно свирене.",
-    imageLabel: "Acoustic Guitar",
-    image: "",
-    badges: ["Акустична", "За обучение", "Наличен"],
-    featured: true,
-    specs: [
-      { label: "Тип", value: "Акустична китара" },
-      { label: "Подходяща за", value: "уроци и домашно свирене" },
-      { label: "Марка", value: "Fender" },
-      { label: "Категория", value: "Струнни инструменти" },
-    ],
-  },
-  {
-    id: "yamaha-psr-e373",
-    name: "Yamaha PSR-E373",
-    brand: "Yamaha",
-    category: "Клавишни инструменти",
-    subcategory: "Преносими клавири",
-    price: "489 лв.",
-    status: "По заявка",
-    description:
-      "Клавир с богата звукова библиотека, ритми и функции за обучение.",
-    imageLabel: "Keyboard",
-    image: "",
-    badges: ["Клавир", "За обучение", "По заявка"],
-    featured: true,
-    specs: [
-      { label: "Тип", value: "Клавишен инструмент" },
-      { label: "Подходящ за", value: "обучение, домашно свирене и упражнения" },
-      { label: "Марка", value: "Yamaha" },
-      { label: "Категория", value: "Клавишни инструменти" },
-    ],
-  },
-  {
-    id: "shure-sm58",
-    name: "Shure SM58",
-    brand: "Shure",
-    category: "Микрофони",
-    subcategory: "Вокални микрофони",
-    price: "250 лв.",
-    status: "Наличен",
-    description:
-      "Професионален вокален микрофон за сцена, репетиции и студио.",
-    imageLabel: "Microphone",
-    image: "",
-    badges: ["Топ избор", "Вокал", "Сцена"],
-    featured: true,
-    specs: [
-      { label: "Тип", value: "Динамичен вокален микрофон" },
-      { label: "Подходящ за", value: "сцена, репетиции и вокали" },
-      { label: "Марка", value: "Shure" },
-      { label: "Категория", value: "Микрофони" },
-    ],
-  },
-  {
-    id: "focusrite-scarlett-solo",
-    name: "Focusrite Scarlett Solo",
-    brand: "Focusrite",
-    category: "Студио оборудване",
-    subcategory: "Аудио интерфейси",
-    price: "315 лв.",
-    status: "Наличен",
-    description:
-      "Компактен аудио интерфейс за запис на вокали, китара, подкаст и домашно студио.",
-    imageLabel: "Audio Interface",
-    image: "",
-    badges: ["Домашно студио", "Запис", "Интерфейс"],
-    featured: true,
-    specs: [
-      { label: "Тип", value: "Аудио интерфейс" },
-      { label: "Подходящ за", value: "вокали, китара, подкаст и домашно студио" },
-      { label: "Марка", value: "Focusrite" },
-      { label: "Категория", value: "Студио оборудване" },
-    ],
-  },
-  {
-    id: "guitar-cable-3m",
-    name: "Инструментален кабел 3 м",
-    brand: "SKY MUSIC BG",
-    category: "Аксесоари",
-    subcategory: "Инструментални кабели",
-    price: "24 лв.",
-    status: "Наличен",
-    description:
-      "Качествен кабел за китара, бас китара, клавир и сценична употреба.",
-    imageLabel: "Cable",
-    image: "",
-    badges: ["Аксесоар", "Кабел", "Наличен"],
-    featured: false,
-    specs: [
-      { label: "Тип", value: "Инструментален кабел" },
-      { label: "Дължина", value: "3 м" },
-      { label: "Подходящ за", value: "китара, бас китара, клавир и сцена" },
-      { label: "Категория", value: "Аксесоари" },
     ],
   },
 ];

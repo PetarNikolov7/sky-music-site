@@ -21,39 +21,51 @@ const categoryVisuals: Record<
     gradient: string;
   }
 > = {
-  "Струнни инструменти": {
-    icon: "🎸",
-    subtitle: "Китари, бас китари и струнни аксесоари",
-    gradient:
-      "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
-  },
-  "Клавишни инструменти": {
+  Клавишни: {
     icon: "🎹",
-    subtitle: "Клавири, синтезатори и дигитални пиана",
+    subtitle: "Пиана, клавири, синтезатори и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.35), rgba(15,23,42,0.98))",
   },
-  "Ударни инструменти": {
+  Струнни: {
+    icon: "🎸",
+    subtitle: "Китари, цигулки, усилватели и аксесоари",
+    gradient:
+      "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
+  },
+  Озвучаване: {
+    icon: "🔊",
+    subtitle: "Тонколони, системи, пултове и усилватели",
+    gradient:
+      "linear-gradient(135deg, rgba(56,189,248,0.24), rgba(30,64,175,0.34), rgba(2,6,23,0.98))",
+  },
+  Ударни: {
     icon: "🥁",
-    subtitle: "Барабани, перкусии и ритъм аксесоари",
+    subtitle: "Барабани, перкусии, палки и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,41,59,0.45), rgba(2,6,23,0.98))",
   },
+  Духови: {
+    icon: "🎷",
+    subtitle: "Кларинети, саксофони, тромпети и флейти",
+    gradient:
+      "linear-gradient(135deg, rgba(125,211,252,0.22), rgba(30,64,175,0.32), rgba(2,6,23,0.98))",
+  },
   Микрофони: {
     icon: "🎤",
-    subtitle: "Вокални, студийни и сценични микрофони",
+    subtitle: "Кабелни, безжични и студийни микрофони",
     gradient:
       "linear-gradient(135deg, rgba(125,211,252,0.24), rgba(29,78,216,0.35), rgba(2,6,23,0.98))",
   },
-  "Студио оборудване": {
+  Студио: {
     icon: "🎚️",
-    subtitle: "Аудио интерфейси, монитори и студио техника",
+    subtitle: "Аудио интерфейси, монитори и слушалки",
     gradient:
       "linear-gradient(135deg, rgba(96,165,250,0.26), rgba(15,23,42,0.55), rgba(0,0,0,0.98))",
   },
   Аксесоари: {
     icon: "🔌",
-    subtitle: "Кабели, стойки, адаптери и консумативи",
+    subtitle: "Кабели, стойки, калъфи и куфари",
     gradient:
       "linear-gradient(135deg, rgba(148,163,184,0.22), rgba(30,64,175,0.28), rgba(2,6,23,0.98))",
   },
@@ -116,13 +128,13 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: "Продуктът не е намерен",
+      title: "Продуктът не е намерен | SKY MUSIC BG",
     };
   }
 
   return {
     title: `${product.name} | SKY MUSIC BG`,
-    description: `${product.name} – ${product.description} Вид: ${product.subcategory}. SKY MUSIC BG, Бургас.`,
+    description: `${product.name} – ${product.description} Категория: ${product.category}. Вид: ${product.subcategory}. SKY MUSIC BG, Бургас.`,
     openGraph: {
       title: `${product.name} | SKY MUSIC BG`,
       description: product.description,
@@ -148,8 +160,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   const visual = getCategoryVisual(product.category);
-  const productBadges = product.badges ?? [];
+  const productBadges = (product.badges ?? []).filter(
+    (badge) => badge !== product.status,
+  );
   const productSpecs = product.specs ?? [];
+
   const galleryImages =
     product.images && product.images.length > 0
       ? product.images
@@ -325,7 +340,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
           <div>
             <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
-              {product.brand}
+              {product.brand.toUpperCase()}
             </p>
 
             <h1 className="mt-4 text-5xl font-black leading-tight md:text-7xl">
@@ -425,12 +440,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
             <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
               <h2 className="text-2xl font-black">Какво следва?</h2>
+
               <div className="mt-5 grid gap-4 text-sm leading-7 text-slate-300">
                 <p>
                   След като изпратите заявка за поръчка, ние ще се свържем с
                   Вас за потвърждение и уточняване на доставката или вземането
                   от магазина.
                 </p>
+
                 <p>
                   При въпроси относно продукта можете да използвате WhatsApp,
                   телефон или формата за заявка.

@@ -1,59 +1,30 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { products } from "@/data/products";
+import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
 const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
 const messengerUrl = "https://m.me/skymusicbg";
 
-const brandBanners = [
-  {
-    name: "Yamaha",
-    label: "YAMAHA",
-    subtitle: "Инструменти, клавири и оборудване",
-  },
-  {
-    name: "Shure",
-    label: "SHURE",
-    subtitle: "Микрофони и сценичен звук",
-  },
-  {
-    name: "Focusrite",
-    label: "FOCUSRITE",
-    subtitle: "Аудио интерфейси и студио решения",
-  },
-  {
-    name: "Casio",
-    label: "CASIO",
-    subtitle: "Клавишни инструменти",
-  },
-  {
-    name: "Roland",
-    label: "ROLAND",
-    subtitle: "Сцена, студио и електронни инструменти",
-  },
-  {
-    name: "Behringer",
-    label: "BEHRINGER",
-    subtitle: "Студио и live sound техника",
-  },
-];
+const brandDescriptions: Record<string, string> = {
+  Yamaha: "Музикални инструменти и оборудване",
+};
 
 const shoppingPaths = [
   {
     title: "За китаристи",
     description:
-      "Китари, аксесоари, кабели и оборудване за репетиции, сцена и домашна употреба.",
-    href: "/products?category=Струнни%20инструменти",
+      "Класически, акустични и електрически китари, усилватели, ефекти и аксесоари.",
+    href: "/products?category=Струнни",
     icon: "🎸",
-    tag: "Струнни инструменти",
+    tag: "Струнни",
   },
   {
     title: "За вокал и сцена",
     description:
-      "Микрофони, сценични решения и техника за репетиции, участия и live sound.",
+      "Кабелни и безжични микрофони за изпълнения, репетиции и събития.",
     href: "/products?category=Микрофони",
     icon: "🎤",
     tag: "Микрофони",
@@ -61,18 +32,18 @@ const shoppingPaths = [
   {
     title: "За домашно студио",
     description:
-      "Аудио интерфейси, мониторинг, студио оборудване и решения за запис.",
-    href: "/products?category=Студио%20оборудване",
+      "Аудио интерфейси, студийни монитори, слушалки и микрофони за запис.",
+    href: "/products?category=Студио",
     icon: "🎚️",
-    tag: "Студио оборудване",
+    tag: "Студио",
   },
   {
     title: "За клавиристи",
     description:
-      "Клавишни инструменти, синтезатори и решения за обучение, сцена и студио.",
-    href: "/products?category=Клавишни%20инструменти",
+      "Дигитални пиана, аранжори, преносими клавири и синтезатори.",
+    href: "/products?category=Клавишни",
     icon: "🎹",
-    tag: "Клавишни инструменти",
+    tag: "Клавишни",
   },
 ];
 
@@ -84,43 +55,57 @@ const categoryVisuals: Record<
     gradient: string;
   }
 > = {
-  "Струнни инструменти": {
-    icon: "🎸",
-    subtitle: "Китари, бас китари и струнни аксесоари",
-    gradient:
-      "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
-  },
-  "Клавишни инструменти": {
+  Клавишни: {
     icon: "🎹",
-    subtitle: "Клавири, синтезатори и дигитални пиана",
+    subtitle: "Пиана, клавири, синтезатори и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.35), rgba(15,23,42,0.98))",
   },
-  "Ударни инструменти": {
+  Струнни: {
+    icon: "🎸",
+    subtitle: "Китари, цигулки, усилватели и аксесоари",
+    gradient:
+      "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
+  },
+  Озвучаване: {
+    icon: "🔊",
+    subtitle: "Тонколони, системи, пултове и усилватели",
+    gradient:
+      "linear-gradient(135deg, rgba(56,189,248,0.24), rgba(30,64,175,0.34), rgba(2,6,23,0.98))",
+  },
+  Ударни: {
     icon: "🥁",
-    subtitle: "Барабани, перкусии и ритъм аксесоари",
+    subtitle: "Барабани, перкусии, палки и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,41,59,0.45), rgba(2,6,23,0.98))",
   },
+  Духови: {
+    icon: "🎷",
+    subtitle: "Кларинети, саксофони, тромпети и флейти",
+    gradient:
+      "linear-gradient(135deg, rgba(125,211,252,0.22), rgba(30,64,175,0.32), rgba(2,6,23,0.98))",
+  },
   Микрофони: {
     icon: "🎤",
-    subtitle: "Вокални, студийни и сценични микрофони",
+    subtitle: "Кабелни, безжични и студийни микрофони",
     gradient:
       "linear-gradient(135deg, rgba(125,211,252,0.24), rgba(29,78,216,0.35), rgba(2,6,23,0.98))",
   },
-  "Студио оборудване": {
+  Студио: {
     icon: "🎚️",
-    subtitle: "Аудио интерфейси, монитори и студио техника",
+    subtitle: "Аудио интерфейси, монитори и слушалки",
     gradient:
       "linear-gradient(135deg, rgba(96,165,250,0.26), rgba(15,23,42,0.55), rgba(0,0,0,0.98))",
   },
   Аксесоари: {
     icon: "🔌",
-    subtitle: "Кабели, стойки, адаптери и консумативи",
+    subtitle: "Кабели, стойки, калъфи и куфари",
     gradient:
       "linear-gradient(135deg, rgba(148,163,184,0.22), rgba(30,64,175,0.28), rgba(2,6,23,0.98))",
   },
 };
+
+const heroCategoryNames = ["Клавишни", "Струнни", "Озвучаване", "Микрофони"];
 
 const howItWorks = [
   {
@@ -146,6 +131,10 @@ const howItWorks = [
 const featuredProducts = products
   .filter((product) => product.featured)
   .slice(0, 6);
+
+const availableBrands = Array.from(
+  new Set(products.map((product) => product.brand).filter(Boolean)),
+).sort((first, second) => first.localeCompare(second, "bg"));
 
 function makeWhatsappLink(productName?: string) {
   const message = productName
@@ -291,13 +280,19 @@ export default function ProductCatalog() {
 
             <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-2xl font-black">{products.length}+</p>
-                <p className="mt-1 text-xs text-slate-400">продукта</p>
+                <p className="text-2xl font-black">{products.length}</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  публикуван продукт
+                </p>
               </div>
+
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-2xl font-black">6</p>
+                <p className="text-2xl font-black">
+                  {catalogCategories.length}
+                </p>
                 <p className="mt-1 text-xs text-slate-400">категории</p>
               </div>
+
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-2xl font-black">30+</p>
                 <p className="mt-1 text-xs text-slate-400">години традиция</p>
@@ -307,40 +302,39 @@ export default function ProductCatalog() {
 
           <div className="relative">
             <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-br from-sky-500/30 via-blue-700/20 to-transparent blur-2xl" />
+
             <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-950/80 p-6 shadow-2xl shadow-black/50">
               <div className="rounded-[2rem] bg-gradient-to-br from-slate-900 via-blue-950 to-black p-8">
                 <div className="rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-400/15 via-blue-700/10 to-white/5 p-6">
                   <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                     SKY MUSIC BG
                   </p>
+
                   <h2 className="mt-4 text-3xl font-black leading-tight">
                     Изберете категория
                   </h2>
+
                   <p className="mt-4 text-sm leading-6 text-slate-300">
-                    Всеки сегмент отваря страницата с продукти, филтрирана по
-                    съответната категория.
+                    Отворете желаната продуктова категория и разгледайте
+                    публикуваните артикули.
                   </p>
                 </div>
 
                 <div className="mt-10 grid gap-4">
-                  {[
-                    "Струнни инструменти",
-                    "Клавишни инструменти",
-                    "Микрофони",
-                    "Студио оборудване",
-                  ].map((item) => {
-                    const visual = getCategoryVisual(item);
+                  {heroCategoryNames.map((categoryName) => {
+                    const visual = getCategoryVisual(categoryName);
 
                     return (
                       <a
-                        key={item}
-                        href={makeCategoryLink(item)}
+                        key={categoryName}
+                        href={makeCategoryLink(categoryName)}
                         className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:-translate-y-0.5 hover:border-sky-400/40 hover:bg-white/10"
                       >
                         <div className="flex items-center gap-4">
                           <span className="text-3xl">{visual.icon}</span>
+
                           <div>
-                            <p className="font-bold">{item}</p>
+                            <p className="font-bold">{categoryName}</p>
                             <p className="mt-1 text-sm text-slate-400">
                               Отворете категорията
                             </p>
@@ -369,12 +363,14 @@ export default function ProductCatalog() {
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                 Марки
               </p>
+
               <h2 className="mt-3 text-4xl font-black md:text-5xl">
-                Популярни брандове
+                Продукти по марка
               </h2>
+
               <p className="mt-4 max-w-2xl text-slate-400">
-                Изберете марка, за да видите продуктите от съответния бранд.
-                По-късно тук ще добавим реалните лога на марките.
+                Изберете марка, за да разгледате публикуваните продукти от
+                съответния бранд.
               </p>
             </div>
 
@@ -386,28 +382,38 @@ export default function ProductCatalog() {
             </a>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {brandBanners.map((brand) => (
-              <a
-                key={brand.name}
-                href={makeBrandLink(brand.name)}
-                className="group relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
-              >
-                <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-400/10 blur-2xl transition group-hover:bg-sky-400/20" />
-                <div className="relative">
-                  <p className="text-2xl font-black tracking-tight text-white">
-                    {brand.label}
-                  </p>
-                  <p className="mt-3 min-h-12 text-xs leading-5 text-slate-400">
-                    {brand.subtitle}
-                  </p>
-                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.25em] text-sky-300">
-                    Вижте продуктите →
-                  </p>
-                </div>
-              </a>
-            ))}
-          </div>
+          {availableBrands.length > 0 ? (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {availableBrands.map((brand) => (
+                <a
+                  key={brand}
+                  href={makeBrandLink(brand)}
+                  className="group relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6 shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.08]"
+                >
+                  <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-sky-400/10 blur-2xl transition group-hover:bg-sky-400/20" />
+
+                  <div className="relative">
+                    <p className="text-3xl font-black tracking-tight text-white">
+                      {brand.toUpperCase()}
+                    </p>
+
+                    <p className="mt-3 min-h-12 text-sm leading-6 text-slate-400">
+                      {brandDescriptions[brand] ??
+                        "Разгледайте продуктите от тази марка."}
+                    </p>
+
+                    <p className="mt-5 text-xs font-bold uppercase tracking-[0.25em] text-sky-300">
+                      Вижте продуктите →
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-slate-400">
+              Марките ще бъдат показани тук при публикуване на продукти.
+            </div>
+          )}
         </section>
 
         <section id="directions" className="py-14">
@@ -417,14 +423,15 @@ export default function ProductCatalog() {
                 <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                   Избор според нуждата
                 </p>
+
                 <h2 className="mt-3 text-4xl font-black md:text-5xl">
                   Намерете правилното оборудване по-бързо
                 </h2>
               </div>
 
               <p className="max-w-xl text-slate-400">
-                Изберете начална посока според това, което търсите — китара,
-                вокал, домашно студио или клавишни инструменти.
+                Изберете посока според това, което търсите — китара, вокал,
+                студио или клавишни инструменти.
               </p>
             </div>
 
@@ -464,12 +471,14 @@ export default function ProductCatalog() {
               <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                 Подбор
               </p>
+
               <h2 className="mt-3 text-4xl font-black md:text-5xl">
                 Избрани продукти
               </h2>
+
               <p className="mt-4 max-w-2xl text-slate-400">
-                Начален подбор от продукти. За всички категории, марки и филтри
-                отворете страницата с продуктите.
+                Продукти, избрани за началната страница. За всички категории и
+                филтри отворете страницата с продуктите.
               </p>
             </div>
 
@@ -481,169 +490,181 @@ export default function ProductCatalog() {
             </a>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {featuredProducts.map((product) => {
-              const visual = getCategoryVisual(product.category);
-              const productBadges = product.badges?.slice(0, 3) ?? [];
-              const hasImage = Boolean(product.image);
+          {featuredProducts.length > 0 ? (
+            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {featuredProducts.map((product) => {
+                const visual = getCategoryVisual(product.category);
+                const productBadges = (product.badges ?? [])
+                  .filter((badge) => badge !== product.status)
+                  .slice(0, 3);
+                const hasImage = Boolean(product.image);
 
-              return (
-                <article
-                  key={product.id}
-                  role="link"
-                  tabIndex={0}
-                  onClick={() => openProduct(product.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openProduct(product.id);
-                    }
-                  }}
-                  className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
-                >
-                  <div
-                    className={`relative h-72 overflow-hidden ${
-                      hasImage ? "bg-white" : ""
-                    }`}
-                    style={hasImage ? undefined : { background: visual.gradient }}
+                return (
+                  <article
+                    key={product.id}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => openProduct(product.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openProduct(product.id);
+                      }
+                    }}
+                    className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
                   >
-                    {hasImage ? (
-                      <Image
-                        src={product.image as string}
-                        alt={product.name}
-                        fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                        className="object-contain p-6 transition duration-500 group-hover:scale-105"
-                      />
-                    ) : (
-                      <>
-                        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
-                        <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
+                    <div
+                      className={`relative h-72 overflow-hidden ${
+                        hasImage ? "bg-white" : ""
+                      }`}
+                      style={
+                        hasImage ? undefined : { background: visual.gradient }
+                      }
+                    >
+                      {hasImage ? (
+                        <Image
+                          src={product.image as string}
+                          alt={product.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                          className="object-contain p-6 transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <>
+                          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
+                          <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
 
-                        <div className="absolute bottom-6 left-6">
-                          <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
-                            {visual.icon}
+                          <div className="absolute bottom-6 left-6">
+                            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
+                              {visual.icon}
+                            </div>
+
+                            <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
+                              {visual.subtitle}
+                            </p>
                           </div>
-                          <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
-                            {visual.subtitle}
-                          </p>
-                        </div>
-                      </>
-                    )}
+                        </>
+                      )}
 
-                    <div className="absolute left-6 right-6 top-6 flex items-start justify-between gap-4">
-                      <span
-                        className={
-                          hasImage
-                            ? "rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white ring-1 ring-black/10 backdrop-blur"
-                            : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
-                        }
-                      >
-                        {product.subcategory}
-                      </span>
+                      <div className="absolute left-6 right-6 top-6 flex items-start justify-between gap-4">
+                        <span
+                          className={
+                            hasImage
+                              ? "rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white ring-1 ring-black/10 backdrop-blur"
+                              : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
+                          }
+                        >
+                          {product.subcategory}
+                        </span>
 
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
-                          product.status,
-                        )}`}
-                      >
-                        {product.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-                      {product.brand}
-                    </p>
-
-                    <h3 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
-                      {product.name}
-                    </h3>
-
-                    <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
-                      {product.category} · {product.subcategory}
-                    </p>
-
-                    <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
-                      {product.description}
-                    </p>
-
-                    {productBadges.length > 0 && (
-                      <div className="mt-5 flex flex-wrap gap-2">
-                        {productBadges.map((badge) => (
-                          <span
-                            key={badge}
-                            className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-sky-100"
-                          >
-                            {badge}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                            Цена
-                          </p>
-                          <p className="mt-1 text-3xl font-black">
-                            {product.price}
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                            Детайли
-                          </p>
-                          <p className="mt-1 text-sm text-slate-300">
-                            Отворете продукта
-                          </p>
-                        </div>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
+                            product.status,
+                          )}`}
+                        >
+                          {product.status}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <a
-                        href={makeProductLink(product.id)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
-                      >
-                        Вижте продукта
-                      </a>
+                    <div className="p-6">
+                      <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+                        {product.brand}
+                      </p>
 
-                      <a
-                        href={makeWhatsappLink(product.name)}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
-                      >
-                        Запитване
-                      </a>
+                      <h3 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
+                        {product.name}
+                      </h3>
 
-                      <a
-                        href={`tel:${phone}`}
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
-                      >
-                        Обадете се
-                      </a>
+                      <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+                        {product.category} · {product.subcategory}
+                      </p>
 
-                      <a
-                        href={makeRequestLink(product.name)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
-                      >
-                        Поръчка / доставка
-                      </a>
+                      <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
+                        {product.description}
+                      </p>
+
+                      {productBadges.length > 0 && (
+                        <div className="mt-5 flex flex-wrap gap-2">
+                          {productBadges.map((badge) => (
+                            <span
+                              key={badge}
+                              className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-sky-100"
+                            >
+                              {badge}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                              Цена
+                            </p>
+
+                            <p className="mt-1 text-3xl font-black">
+                              {product.price}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                              Детайли
+                            </p>
+                            <p className="mt-1 text-sm text-slate-300">
+                              Отворете продукта
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-2 gap-3">
+                        <a
+                          href={makeProductLink(product.id)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+                        >
+                          Вижте продукта
+                        </a>
+
+                        <a
+                          href={makeWhatsappLink(product.name)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+                        >
+                          Запитване
+                        </a>
+
+                        <a
+                          href={`tel:${phone}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+                        >
+                          Обадете се
+                        </a>
+
+                        <a
+                          href={makeRequestLink(product.name)}
+                          onClick={(event) => event.stopPropagation()}
+                          className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+                        >
+                          Поръчка / доставка
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-10 text-center text-slate-400">
+              Избраните продукти ще бъдат показани тук при публикуване.
+            </div>
+          )}
         </section>
 
         <section
@@ -654,10 +675,12 @@ export default function ProductCatalog() {
             <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
               За SKY MUSIC BG
             </p>
+
             <h2 className="mt-4 text-4xl font-black">
               Музикален магазин с 30 години традиция, лично обслужване и
               професионална консултация.
             </h2>
+
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
               SKY MUSIC BG предлага музикални инструменти, студио оборудване и
               аксесоари в Бургас вече повече от 30 години. В нашия сайт можете
@@ -690,9 +713,11 @@ export default function ProductCatalog() {
                 <p className="text-sm font-black uppercase tracking-[0.35em] text-blue-700">
                   Контакти
                 </p>
+
                 <h2 className="mt-4 text-4xl font-black md:text-5xl">
                   Избрахте продукт?
                 </h2>
+
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
                   Свържете се с нас при въпроси или използвайте формата за
                   поръчка. Ние ще се свържем с Вас за потвърждение и уточняване
@@ -706,12 +731,14 @@ export default function ProductCatalog() {
                   >
                     📞 {phone}
                   </a>
+
                   <a
                     href={`mailto:${email}`}
                     className="rounded-2xl bg-slate-900 px-6 py-5 text-center font-black text-white"
                   >
                     ✉️ Имейл
                   </a>
+
                   <a
                     href={makeWhatsappLink()}
                     target="_blank"
@@ -720,6 +747,7 @@ export default function ProductCatalog() {
                   >
                     WhatsApp
                   </a>
+
                   <a
                     href={messengerUrl}
                     target="_blank"
@@ -736,9 +764,11 @@ export default function ProductCatalog() {
                   <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                     SKY MUSIC BG
                   </p>
+
                   <h3 className="mt-4 text-3xl font-black">
                     Бургас · Музикален магазин
                   </h3>
+
                   <p className="mt-4 text-sm leading-6 text-slate-300">
                     Лично обслужване, консултация и съдействие при избор на
                     продукт.
@@ -764,6 +794,7 @@ export default function ProductCatalog() {
                 <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
                   Как работи
                 </p>
+
                 <h2 className="mt-3 text-4xl font-black md:text-5xl">
                   Запитване или поръчка в няколко стъпки
                 </h2>
@@ -785,7 +816,9 @@ export default function ProductCatalog() {
                   <p className="text-sm font-black text-sky-300">
                     {item.step}
                   </p>
+
                   <h3 className="mt-4 text-2xl font-black">{item.title}</h3>
+
                   <p className="mt-4 text-sm leading-6 text-slate-400">
                     {item.description}
                   </p>
