@@ -16,6 +16,8 @@ const categoryVisuals: Record<
     icon: string;
     subtitle: string;
     gradient: string;
+    image: string;
+    imagePosition: string;
   }
 > = {
   Клавишни: {
@@ -23,48 +25,64 @@ const categoryVisuals: Record<
     subtitle: "Пиана, клавири, синтезатори и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(37,99,235,0.35), rgba(15,23,42,0.98))",
+    image: "/categories/keyboards.webp",
+    imagePosition: "center center",
   },
   Струнни: {
     icon: "🎸",
     subtitle: "Китари, цигулки, усилватели и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(14,165,233,0.28), rgba(30,64,175,0.38), rgba(2,6,23,0.98))",
+    image: "/categories/strings.webp",
+    imagePosition: "center center",
   },
   Озвучаване: {
     icon: "🔊",
     subtitle: "Тонколони, системи, пултове и усилватели",
     gradient:
       "linear-gradient(135deg, rgba(56,189,248,0.24), rgba(30,64,175,0.34), rgba(2,6,23,0.98))",
+    image: "/categories/sound.webp",
+    imagePosition: "center center",
   },
   Ударни: {
     icon: "🥁",
     subtitle: "Барабани, перкусии, палки и аксесоари",
     gradient:
       "linear-gradient(135deg, rgba(59,130,246,0.25), rgba(30,41,59,0.45), rgba(2,6,23,0.98))",
+    image: "/categories/drums.webp",
+    imagePosition: "center center",
   },
   Духови: {
     icon: "🎷",
     subtitle: "Кларинети, саксофони, тромпети и флейти",
     gradient:
       "linear-gradient(135deg, rgba(125,211,252,0.22), rgba(30,64,175,0.32), rgba(2,6,23,0.98))",
+    image: "/categories/wind.webp",
+    imagePosition: "center center",
   },
   Микрофони: {
     icon: "🎤",
     subtitle: "Кабелни, безжични и студийни микрофони",
     gradient:
       "linear-gradient(135deg, rgba(125,211,252,0.24), rgba(29,78,216,0.35), rgba(2,6,23,0.98))",
+    image: "/categories/microphones.webp",
+    imagePosition: "center center",
   },
   Студио: {
     icon: "🎚️",
     subtitle: "Аудио интерфейси, монитори и слушалки",
     gradient:
       "linear-gradient(135deg, rgba(96,165,250,0.26), rgba(15,23,42,0.55), rgba(0,0,0,0.98))",
+    image: "/categories/studio.webp",
+    imagePosition: "center center",
   },
   Аксесоари: {
     icon: "🔌",
     subtitle: "Кабели, стойки, калъфи и куфари",
     gradient:
       "linear-gradient(135deg, rgba(148,163,184,0.22), rgba(30,64,175,0.28), rgba(2,6,23,0.98))",
+    image: "/categories/accessories.webp",
+    imagePosition: "center center",
   },
 };
 
@@ -117,6 +135,8 @@ function getCategoryVisual(category: string) {
       subtitle: "Музикално оборудване и аксесоари",
       gradient:
         "linear-gradient(135deg, rgba(14,165,233,0.25), rgba(30,64,175,0.35), rgba(2,6,23,0.98))",
+      image: "",
+      imagePosition: "center center",
     }
   );
 }
@@ -336,8 +356,6 @@ function ProductsPageContent() {
 
   const hasActiveFilter =
     activeFilterCount > 0 || search.trim().length > 0;
-
-  const selectedVisual = getCategoryVisual(selectedCategory);
 
   const resultMetricValue = isMainCategoryLanding
     ? catalogCategories.length
@@ -620,16 +638,25 @@ function ProductsPageContent() {
                       onClick={() => selectCategory(category.name)}
                       className="group cursor-pointer overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] text-left shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
                     >
-                      <div
-                        className="relative flex h-40 items-center justify-center overflow-hidden"
-                        style={{ background: visual.gradient }}
-                      >
-                        <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-300/15 blur-2xl transition group-hover:bg-sky-300/25" />
-                        <div className="absolute -bottom-10 left-4 h-28 w-28 rounded-full bg-blue-500/15 blur-2xl" />
+                      <div className="relative h-44 overflow-hidden bg-slate-950">
+                        {visual.image ? (
+                          <Image
+                            src={visual.image}
+                            alt={`${category.name} - SKY MUSIC BG`}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                            style={{ objectPosition: visual.imagePosition }}
+                            className="object-cover transition duration-700 ease-out group-hover:scale-105"
+                          />
+                        ) : (
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: visual.gradient }}
+                          />
+                        )}
 
-                        <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-xl shadow-black/20">
-                          {visual.icon}
-                        </div>
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                        <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
                       </div>
 
                       <div className="p-5">
@@ -652,49 +679,47 @@ function ProductsPageContent() {
             </div>
           ) : isSubcategoryLanding ? (
             <div>
-              <div className="mb-8">
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-                  {selectedCategory}
-                </p>
+              <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
+                    {selectedCategory}
+                  </p>
 
-                <h2 className="mt-3 text-3xl font-black md:text-4xl">
-                  Подкатегории
-                </h2>
+                  <h2 className="mt-3 text-3xl font-black md:text-4xl">
+                    Подкатегории
+                  </h2>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => selectCategory("Всички")}
+                  className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+                >
+                  ← Основни категории
+                </button>
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {availableSubcategories.map((subcategory) => (
                   <button
                     key={subcategory}
                     type="button"
                     onClick={() => selectSubcategory(subcategory)}
-                    className="group cursor-pointer overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.04] text-left shadow-lg shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
+                    className="group flex min-h-[104px] cursor-pointer items-center justify-between gap-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-5 text-left shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:border-sky-400/40 hover:bg-white/[0.07]"
                   >
-                    <div
-                      className="relative flex h-36 items-center justify-center overflow-hidden"
-                      style={{ background: selectedVisual.gradient }}
-                    >
-                      <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-sky-300/15 blur-2xl transition group-hover:bg-sky-300/25" />
-                      <div className="absolute -bottom-10 left-4 h-28 w-28 rounded-full bg-blue-500/15 blur-2xl" />
-
-                      <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-4xl shadow-xl shadow-black/20">
-                        {selectedVisual.icon}
-                      </div>
-                    </div>
-
-                    <div className="p-5">
-                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-sky-300">
-                        {selectedCategory}
-                      </p>
-
-                      <h3 className="mt-3 text-xl font-black leading-tight text-white">
+                    <div>
+                      <h3 className="text-lg font-black leading-snug text-white">
                         {subcategory}
                       </h3>
 
-                      <p className="mt-5 text-sm font-bold text-slate-400 transition group-hover:text-sky-200">
-                        Разгледайте →
+                      <p className="mt-2 text-sm font-bold text-slate-400 transition group-hover:text-sky-200">
+                        Разгледайте продуктите
                       </p>
                     </div>
+
+                    <span className="shrink-0 text-xl font-black text-sky-300 transition group-hover:translate-x-1">
+                      →
+                    </span>
                   </button>
                 ))}
               </div>
@@ -834,7 +859,7 @@ function ProductsPageContent() {
                         <a
                           href={makeProductLink(product.id)}
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+                          className="cursor-pointer rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
                         >
                           Вижте продукта
                         </a>
@@ -844,7 +869,7 @@ function ProductsPageContent() {
                           target="_blank"
                           rel="noreferrer"
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+                          className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
                         >
                           Запитване
                         </a>
@@ -852,7 +877,7 @@ function ProductsPageContent() {
                         <a
                           href={`tel:${phone}`}
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+                          className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
                         >
                           Обадете се
                         </a>
@@ -860,7 +885,7 @@ function ProductsPageContent() {
                         <a
                           href={makeRequestLink(product.name)}
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+                          className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                         >
                           Поръчка / доставка
                         </a>
