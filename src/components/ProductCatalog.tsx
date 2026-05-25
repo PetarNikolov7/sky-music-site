@@ -8,6 +8,7 @@ import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
 const email = "skymusicstorebg@gmail.com";
+const mapsUrl = "https://maps.app.goo.gl/MbzcxmoBwE7t3Y8c6";
 
 const brandDescriptions: Record<string, string> = {
   Yamaha: "Музикални инструменти и оборудване",
@@ -563,46 +564,97 @@ export default function ProductCatalog() {
         </section>
 
         <section id="contact" className="py-14">
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-8 md:p-10">
-            <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
-              <div>
+          <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/20">
+            <div className="grid lg:grid-cols-[1.04fr_0.96fr]">
+              <div className="p-8 md:p-10 lg:p-12">
                 <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
-                  Контакт
+                  Свържете се с нас
                 </p>
 
-                <h2 className="mt-4 text-4xl font-black md:text-5xl">
+                <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
                   Имате въпрос или сте избрали продукт?
                 </h2>
 
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-                  За бърз въпрос използвайте „Чат с нас“, а за поръчка
-                  изпратете заявка директно през сайта. След това ще се свържем
-                  с Вас за потвърждение и уточняване на доставката.
+                <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
+                  При въпрос използвайте „Чат с нас“ или се свържете директно.
+                  За поръчка изпратете заявка през сайта и ние ще се свържем с
+                  Вас за потвърждение.
                 </p>
-              </div>
 
-              <div className="grid gap-3 sm:min-w-[330px]">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="mt-8 grid gap-3 sm:max-w-xl sm:grid-cols-2">
                   <a
                     href={`tel:${phone}`}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center font-black text-white transition hover:bg-white/10"
+                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center font-black text-white transition hover:border-sky-400/30 hover:bg-white/10"
                   >
                     Обадете се
                   </a>
 
                   <a
                     href={`mailto:${email}`}
-                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center font-black text-white transition hover:bg-white/10"
+                    className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center font-black text-white transition hover:border-sky-400/30 hover:bg-white/10"
                   >
                     Имейл
                   </a>
+
+                  <a
+                    href="/request"
+                    className="sm:col-span-2 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-5 text-center font-black text-white transition hover:brightness-105"
+                  >
+                    Поръчка / доставка
+                  </a>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/45 to-black p-8 md:p-10 lg:border-l lg:border-t-0 lg:p-12">
+                <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
+                  Посетете ни
+                </p>
+
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.05] p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-500">
+                    Адрес
+                  </p>
+
+                  <p className="mt-3 text-xl font-black text-white">
+                    ул. Георги Баев 23
+                  </p>
+
+                  <p className="mt-1 text-sm text-slate-300">
+                    Бургас, България
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.05] p-5">
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-slate-500">
+                    Работно време
+                  </p>
+
+                  <div className="mt-4 grid gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-400">Понеделник – Петък</span>
+                      <span className="font-bold text-white">10:00 – 18:00</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-400">Събота</span>
+                      <span className="font-bold text-white">10:00 – 13:00</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-400">Неделя</span>
+                      <span className="font-bold text-slate-300">Почивен ден</span>
+                    </div>
+                  </div>
                 </div>
 
                 <a
-                  href="/request"
-                  className="rounded-2xl bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-5 text-center font-black text-white transition hover:brightness-105"
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 flex items-center justify-center gap-3 rounded-2xl border border-sky-400/25 bg-sky-400/10 px-6 py-4 text-center font-black text-sky-100 transition hover:border-sky-400/40 hover:bg-sky-400/20"
                 >
-                  Поръчка / доставка
+                  <span>Отворете в Google Maps</span>
+                  <span aria-hidden="true">→</span>
                 </a>
               </div>
             </div>
