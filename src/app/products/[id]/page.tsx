@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import ChatInquiryButton from "@/components/ChatInquiryButton";
 import SiteHeader from "@/components/SiteHeader";
 import { products } from "@/data/products";
 
 const phone = "+359884211761";
-const whatsappNumber = "359884211761";
 
 type ProductPageProps = {
   params: Promise<{
@@ -92,12 +92,6 @@ function getStatusClass(status: string) {
   }
 
   return "bg-red-400/10 text-red-300 ring-1 ring-red-400/20";
-}
-
-function makeWhatsappLink(productName: string) {
-  const message = `Здравейте, интересувам се от ${productName}. Моля за повече информация.`;
-
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
 function makeRequestLink(productName: string) {
@@ -374,29 +368,26 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <h2 className="text-2xl font-black">Запитване или поръчка</h2>
 
               <p className="mt-3 leading-7 text-slate-300">
-                Ако имате въпроси за този продукт, можете да изпратите
-                запитване в WhatsApp или да се свържете с нас по телефон. Ако
-                желаете да поръчате директно, използвайте формата за поръчка и
-                доставка.
+                Ако имате въпроси за този продукт, използвайте бутона
+                „Чат с нас“ или се свържете с нас по телефон. Ако желаете да
+                поръчате директно, използвайте формата за поръчка и доставка.
               </p>
             </div>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <a
-                href={makeWhatsappLink(product.name)}
-                target="_blank"
-                rel="noreferrer"
-                className="cursor-pointer rounded-full bg-white px-6 py-4 text-center font-black text-black transition hover:bg-sky-100"
-              >
-                Запитване в WhatsApp
-              </a>
-
               <a
                 href={`tel:${phone}`}
                 className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-4 text-center font-black text-white transition hover:bg-white/10"
               >
                 Обадете се
               </a>
+
+              <ChatInquiryButton
+                productName={product.name}
+                className="cursor-pointer rounded-full bg-white px-6 py-4 text-center font-black text-black transition hover:bg-sky-100"
+              >
+                Запитване
+              </ChatInquiryButton>
 
               <a
                 href={makeRequestLink(product.name)}
@@ -417,8 +408,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 </p>
 
                 <p>
-                  При въпроси относно продукта можете да използвате WhatsApp,
-                  телефон или формата за заявка.
+                  При въпроси относно продукта използвайте бутона „Чат с нас“
+                  или се свържете с нас по телефон.
                 </p>
               </div>
             </div>

@@ -5,18 +5,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { catalogCategories } from "@/data/products";
 
-const whatsappNumber = "359884211761";
-
 type SiteHeaderProps = {
   activePage?: "home" | "products" | "request";
 };
-
-function makeWhatsappLink() {
-  const message =
-    "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
-
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
 
 function makeCategoryLink(category: string) {
   return `/products?category=${encodeURIComponent(category)}`;
@@ -270,15 +261,6 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
             </Link>
           </nav>
 
-          <a
-            href={makeWhatsappLink()}
-            target="_blank"
-            rel="noreferrer"
-            className="hidden shrink-0 rounded-full bg-white px-5 py-3 text-sm font-bold text-black transition hover:bg-slate-200 lg:inline-flex"
-          >
-            WhatsApp
-          </a>
-
           {/* Mobile menu button */}
           <button
             type="button"
@@ -458,18 +440,6 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
               </Link>
             </div>
           </nav>
-
-          <div className="shrink-0 border-t border-white/10 bg-[#05070d] px-5 py-4 md:px-8">
-            <a
-              href={makeWhatsappLink()}
-              target="_blank"
-              rel="noreferrer"
-              onClick={closeMobileMenu}
-              className="mx-auto block max-w-7xl cursor-pointer rounded-2xl bg-white px-5 py-4 text-center font-black text-black transition hover:bg-slate-200"
-            >
-              WhatsApp
-            </a>
-          </div>
         </div>
       )}
     </>

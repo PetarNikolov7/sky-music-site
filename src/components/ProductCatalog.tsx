@@ -1,14 +1,13 @@
 ﻿"use client";
 
 import Image from "next/image";
+import ChatInquiryButton from "@/components/ChatInquiryButton";
 import HomeBannerSlideshow from "@/components/HomeBannerSlideshow";
 import SiteHeader from "@/components/SiteHeader";
 import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
-const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
-const messengerUrl = "https://m.me/skymusicbg";
 
 const brandDescriptions: Record<string, string> = {
   Yamaha: "Музикални инструменти и оборудване",
@@ -120,13 +119,13 @@ const howItWorks = [
     step: "02",
     title: "Правите запитване или поръчка",
     description:
-      "Ако имате въпроси, изпратете запитване. Ако желаете да поръчате директно, използвайте формата за поръчка.",
+      "При въпрос използвайте чата с нас. За директна поръчка използвайте формата за поръчка и доставка.",
   },
   {
     step: "03",
     title: "Ние се свързваме с Вас",
     description:
-      "След получаване на заявката ще се свържем с Вас за потвърждение на поръчката и уточняване на доставката или вземането от магазина.",
+      "След получаване на поръчката ще се свържем с Вас за потвърждение и уточняване на доставката или вземането от магазина.",
   },
 ];
 
@@ -137,14 +136,6 @@ const featuredProducts = products
 const availableBrands = Array.from(
   new Set(products.map((product) => product.brand).filter(Boolean)),
 ).sort((first, second) => first.localeCompare(second, "bg"));
-
-function makeWhatsappLink(productName?: string) {
-  const message = productName
-    ? `Здравейте, интересувам се от ${productName}. Моля за повече информация.`
-    : "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
-
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
 
 function makeRequestLink(productName?: string) {
   if (!productName) {
@@ -574,35 +565,24 @@ export default function ProductCatalog() {
 
                       <div className="mt-5 grid grid-cols-2 gap-3">
                         <a
-                          href={makeProductLink(product.id)}
-                          onClick={(event) => event.stopPropagation()}
-                          className="rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
-                        >
-                          Вижте продукта
-                        </a>
-
-                        <a
-                          href={makeWhatsappLink(product.name)}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
-                        >
-                          Запитване
-                        </a>
-
-                        <a
                           href={`tel:${phone}`}
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+                          className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
                         >
                           Обадете се
                         </a>
 
+                        <ChatInquiryButton
+                          productName={product.name}
+                          className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+                        >
+                          Запитване
+                        </ChatInquiryButton>
+
                         <a
                           href={makeRequestLink(product.name)}
                           onClick={(event) => event.stopPropagation()}
-                          className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+                          className="col-span-2 cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-4 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                         >
                           Поръчка / доставка
                         </a>
@@ -671,9 +651,9 @@ export default function ProductCatalog() {
                 </h2>
 
                 <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-                  Свържете се с нас при въпроси или използвайте формата за
-                  поръчка. Ние ще се свържем с Вас за потвърждение и уточняване
-                  на доставката.
+                  Свържете се с нас при въпроси чрез бутона „Чат с нас“ или
+                  използвайте формата за поръчка. Ние ще се свържем с Вас за
+                  потвърждение и уточняване на доставката.
                 </p>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -692,21 +672,10 @@ export default function ProductCatalog() {
                   </a>
 
                   <a
-                    href={makeWhatsappLink()}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl bg-green-600 px-6 py-5 text-center font-black text-white"
+                    href="/request"
+                    className="sm:col-span-2 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-700 px-6 py-5 text-center font-black text-white transition hover:brightness-105"
                   >
-                    WhatsApp
-                  </a>
-
-                  <a
-                    href={messengerUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl bg-blue-600 px-6 py-5 text-center font-black text-white"
-                  >
-                    Messenger
+                    Поръчка / доставка
                   </a>
                 </div>
               </div>
@@ -754,7 +723,7 @@ export default function ProductCatalog() {
 
               <p className="max-w-xl text-slate-400">
                 Когато изберете желания продукт, можете да направите запитване
-                при въпроси или да изпратите директна заявка чрез формата за
+                през чата или да изпратите директна заявка чрез формата за
                 поръчка.
               </p>
             </div>

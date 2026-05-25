@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Exo_2, Manrope } from "next/font/google";
+import FloatingContactChat from "@/components/FloatingContactChat";
 import "./globals.css";
 
 const headingFont = Exo_2({
@@ -17,11 +18,12 @@ const bodyFont = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL("https://sky-music-site-sigma.vercel.app"),
   title: {
-    default: "SKY MUSIC BG | Музикални инструменти и студио оборудване в Бургас",
+    default:
+      "SKY MUSIC BG | Музикални инструменти и студио оборудване в Бургас",
     template: "%s | SKY MUSIC BG",
   },
   description:
-    "Каталог на SKY MUSIC BG – музикални инструменти, студио оборудване, микрофони и аксесоари в Бургас. Запитване по WhatsApp, Messenger, телефон или имейл.",
+    "SKY MUSIC BG – музикални инструменти, студио оборудване, микрофони и аксесоари в Бургас. Поръчки през сайта и директен контакт.",
   keywords: [
     "SKY MUSIC BG",
     "музикален магазин Бургас",
@@ -43,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "SKY MUSIC BG",
     title: "SKY MUSIC BG | Музикални инструменти и студио оборудване",
     description:
-      "Разгледай каталога на SKY MUSIC BG – музикални инструменти, студио оборудване, микрофони и аксесоари. Запитване по WhatsApp, Messenger, телефон или имейл.",
+      "Музикални инструменти, студио оборудване, микрофони и аксесоари от SKY MUSIC BG. Поръчки през сайта и директен контакт.",
     images: [
       {
         url: "/sky-music-logo-dark-header.png",
@@ -57,7 +59,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "SKY MUSIC BG | Музикални инструменти и студио оборудване",
     description:
-      "Каталог на SKY MUSIC BG – музикални инструменти, студио оборудване, микрофони и аксесоари в Бургас.",
+      "Музикални инструменти, студио оборудване, микрофони и аксесоари в Бургас.",
     images: ["/sky-music-logo-dark-header.png"],
   },
   icons: {
@@ -87,10 +89,12 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
         <link rel="shortcut icon" href="/icon.svg?v=3" type="image/svg+xml" />
       </head>
+
       <body
         className={`${headingFont.variable} ${bodyFont.variable} antialiased`}
       >
         {children}
+        <FloatingContactChat />
       </body>
     </html>
   );

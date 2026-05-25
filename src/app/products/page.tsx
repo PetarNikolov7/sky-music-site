@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import ChatInquiryButton from "@/components/ChatInquiryButton";
 import {
   Suspense,
   useEffect,
@@ -13,7 +14,6 @@ import SiteHeader from "@/components/SiteHeader";
 import { catalogCategories, categories, products } from "@/data/products";
 
 const phone = "+359884211761";
-const whatsappNumber = "359884211761";
 const allCategoriesLabel = "Всички";
 const allBrandsLabel = "Всички марки";
 
@@ -93,14 +93,6 @@ const categoryVisuals: Record<string, CategoryVisual> = {
     imagePosition: "center center",
   },
 };
-
-function makeWhatsappLink(productName?: string) {
-  const message = productName
-    ? `Здравейте, интересувам се от ${productName}. Моля за повече информация.`
-    : "Здравейте, интересувам се от продуктите на SKY MUSIC BG.";
-
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
 
 function makeRequestLink(productName?: string) {
   return productName
@@ -466,24 +458,6 @@ function ProductCard({ product, onOpen }: ProductCardProps) {
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <a
-            href={makeProductLink(product.id)}
-            onClick={(event) => event.stopPropagation()}
-            className="cursor-pointer rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
-          >
-            Вижте продукта
-          </a>
-
-          <a
-            href={makeWhatsappLink(product.name)}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => event.stopPropagation()}
-            className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
-          >
-            Запитване
-          </a>
-
-          <a
             href={`tel:${phone}`}
             onClick={(event) => event.stopPropagation()}
             className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
@@ -491,10 +465,17 @@ function ProductCard({ product, onOpen }: ProductCardProps) {
             Обадете се
           </a>
 
+          <ChatInquiryButton
+            productName={product.name}
+            className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+          >
+            Запитване
+          </ChatInquiryButton>
+
           <a
             href={makeRequestLink(product.name)}
             onClick={(event) => event.stopPropagation()}
-            className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+            className="col-span-2 cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-4 text-center text-sm font-black text-white transition hover:scale-[1.01]"
           >
             Поръчка / доставка
           </a>
