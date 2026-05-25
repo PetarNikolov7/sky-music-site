@@ -1,25 +1,33 @@
 "use client";
 
 import Image from "next/image";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import { catalogCategories, categories, products } from "@/data/products";
 
 const phone = "+359884211761";
 const whatsappNumber = "359884211761";
+const allCategoriesLabel = "Всички";
 const allBrandsLabel = "Всички марки";
 
-const categoryVisuals: Record<
-  string,
-  {
-    icon: string;
-    subtitle: string;
-    gradient: string;
-    image: string;
-    imagePosition: string;
-  }
-> = {
+type Product = (typeof products)[number];
+
+type CategoryVisual = {
+  icon: string;
+  subtitle: string;
+  gradient: string;
+  image: string;
+  imagePosition: string;
+};
+
+const categoryVisuals: Record<string, CategoryVisual> = {
   Клавишни: {
     icon: "🎹",
     subtitle: "Пиана, клавири, синтезатори и аксесоари",
@@ -111,11 +119,11 @@ function makeProductsUrl(
 ) {
   const params = new URLSearchParams();
 
-  if (category !== "Всички") {
+  if (category !== allCategoriesLabel) {
     params.set("category", category);
   }
 
-  if (category !== "Всички" && subcategory) {
+  if (category !== allCategoriesLabel && subcategory) {
     params.set("subcategory", subcategory);
   }
 
@@ -128,7 +136,7 @@ function makeProductsUrl(
   return query ? `/products?${query}` : "/products";
 }
 
-function getCategoryVisual(category: string) {
+function getCategoryVisual(category: string): CategoryVisual {
   return (
     categoryVisuals[category] ?? {
       icon: "🎵",
@@ -157,6 +165,345 @@ function getProductCountLabel(count: number) {
   return count === 1 ? "намерен продукт" : "намерени продукта";
 }
 
+type BrowseNavigationProps = {
+  selectedCategory: string;
+  selectedSubcategory: string | null;
+  selectedBrand: string;
+  allBrands: string[];
+  onShowAllCategories: () => void;
+  onCategorySelect: (category: string) => void;
+  onSubcategorySelect: (category: string, subcategory: string) => void;
+  onBrandSelect: (brand: string) => void;
+};
+
+function BrowseNavigation({
+  selectedCategory,
+  selectedSubcategory,
+  selectedBrand,
+  allBrands,
+  onShowAllCategories,
+  onCategorySelect,
+  onSubcategorySelect,
+  onBrandSelect,
+}: BrowseNavigationProps) {
+  const [expandedCategoryName, setExpandedCategoryName] = useState<
+    string | null
+  >(selectedCategory === allCategoriesLabel ? null : selectedCategory);
+
+  useEffect(() => {
+    if (selectedCategory === allCategoriesLabel) {
+      setExpandedCategoryName(null);
+      return;
+    }
+
+    setExpandedCategoryName(selectedCategory);
+  }, [selectedCategory]);
+
+  function selectCategoryAndExpand(categoryName: string) {
+    setExpandedCategoryName(categoryName);
+
+    if (categoryName !== selectedCategory) {
+      onCategorySelect(categoryName);
+    }
+  }
+
+  function toggleCategoryPanel(categoryName: string) {
+    setExpandedCategoryName((current) =>
+      current === categoryName ? null : categoryName,
+    );
+  }
+
+  return (
+    <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] p-4">
+      <div className="border-b border-white/10 pb-4">
+        <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-300">
+          Категории
+        </p>
+
+        <button
+          type="button"
+          onClick={onShowAllCategories}
+          className="mt-4 flex w-full cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-left text-sm font-bold text-white transition hover:border-sky-400/30 hover:bg-white/[0.08]"
+        >
+          <span>Всички категории</span>
+          <span className="text-sky-300">←</span>
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {catalogCategories.map((category) => {
+          const expanded = category.name === expandedCategoryName;
+          const selected = category.name === selectedCategory;
+
+          return (
+            <div key={category.name}>
+              <div
+                className={
+                  selected
+                    ? "flex overflow-hidden rounded-xl bg-sky-400 text-black"
+                    : expanded
+                      ? "flex overflow-hidden rounded-xl border border-sky-400/30 bg-sky-400/10 text-sky-100"
+                      : "flex overflow-hidden rounded-xl border border-transparent text-slate-300 transition hover:border-white/10 hover:bg-white/[0.05] hover:text-white"
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => selectCategoryAndExpand(category.name)}
+                  className="min-w-0 flex-1 cursor-pointer px-4 py-3 text-left text-sm font-black"
+                >
+                  {category.name}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => toggleCategoryPanel(category.name)}
+                  aria-label={
+                    expanded
+                      ? `Сгънете подкатегориите в ${category.name}`
+                      : `Разгънете подкатегориите в ${category.name}`
+                  }
+                  aria-expanded={expanded}
+                  className={
+                    selected
+                      ? "flex w-12 shrink-0 cursor-pointer items-center justify-center text-lg font-black text-black transition hover:bg-black/10"
+                      : "flex w-12 shrink-0 cursor-pointer items-center justify-center text-lg font-black text-sky-300 transition hover:bg-white/[0.08]"
+                  }
+                >
+                  {expanded ? "−" : "+"}
+                </button>
+              </div>
+
+              {expanded && (
+                <div className="mt-2 grid gap-1 rounded-xl border border-white/10 bg-black/20 p-2">
+                  {category.subcategories.map((subcategory) => {
+                    const active =
+                      category.name === selectedCategory &&
+                      subcategory === selectedSubcategory;
+
+                    return (
+                      <button
+                        key={subcategory}
+                        type="button"
+                        onClick={() =>
+                          onSubcategorySelect(category.name, subcategory)
+                        }
+                        className={
+                          active
+                            ? "flex w-full cursor-pointer items-center justify-between rounded-lg bg-cyan-300 px-3 py-2.5 text-left text-sm font-black text-black"
+                            : "flex w-full cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm text-slate-300 transition hover:bg-white/[0.06] hover:text-white"
+                        }
+                      >
+                        <span>{subcategory}</span>
+                        {active && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 border-t border-white/10 pt-5">
+        <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-500">
+          Марка
+        </p>
+
+        <div className="mt-4 grid gap-2">
+          {allBrands.map((brand) => {
+            const active = brand === selectedBrand;
+
+            return (
+              <button
+                key={brand}
+                type="button"
+                onClick={() => onBrandSelect(brand)}
+                className={
+                  active
+                    ? "cursor-pointer rounded-xl bg-white px-4 py-3 text-left text-sm font-black text-black"
+                    : "cursor-pointer rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left text-sm font-bold text-slate-300 transition hover:bg-white/[0.08] hover:text-white"
+                }
+              >
+                {brand}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type ProductCardProps = {
+  product: Product;
+  onOpen: (productId: string) => void;
+};
+
+function ProductCard({ product, onOpen }: ProductCardProps) {
+  const visual = getCategoryVisual(product.category);
+  const productBadges = (product.badges ?? [])
+    .filter((badge) => badge !== product.status)
+    .slice(0, 3);
+  const hasImage = Boolean(product.image);
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onOpen(product.id);
+    }
+  }
+
+  return (
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={() => onOpen(product.id)}
+      onKeyDown={handleKeyDown}
+      className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
+    >
+      <div
+        className={`relative h-72 overflow-hidden ${hasImage ? "bg-white" : ""}`}
+        style={hasImage ? undefined : { background: visual.gradient }}
+      >
+        {hasImage ? (
+          <Image
+            src={product.image as string}
+            alt={product.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-contain p-6 transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <>
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
+            <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
+
+            <div className="absolute bottom-6 left-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
+                {visual.icon}
+              </div>
+
+              <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
+                {visual.subtitle}
+              </p>
+            </div>
+          </>
+        )}
+
+        <div className="absolute left-6 right-6 top-6 flex items-start justify-between gap-4">
+          <span
+            className={
+              hasImage
+                ? "rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white ring-1 ring-black/10 backdrop-blur"
+                : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
+            }
+          >
+            {product.subcategory}
+          </span>
+
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
+              product.status,
+            )}`}
+          >
+            {product.status}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+          {product.brand}
+        </p>
+
+        <h2 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
+          {product.name}
+        </h2>
+
+        <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+          {product.category} · {product.subcategory}
+        </p>
+
+        <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
+          {product.description}
+        </p>
+
+        {productBadges.length > 0 && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {productBadges.map((badge) => (
+              <span
+                key={badge}
+                className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-sky-100"
+              >
+                {badge}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                Цена
+              </p>
+
+              <p className="mt-1 text-3xl font-black">{product.price}</p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
+                Детайли
+              </p>
+
+              <p className="mt-1 text-sm text-slate-300">
+                Отворете продукта
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <a
+            href={makeProductLink(product.id)}
+            onClick={(event) => event.stopPropagation()}
+            className="cursor-pointer rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+          >
+            Вижте продукта
+          </a>
+
+          <a
+            href={makeWhatsappLink(product.name)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(event) => event.stopPropagation()}
+            className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
+          >
+            Запитване
+          </a>
+
+          <a
+            href={`tel:${phone}`}
+            onClick={(event) => event.stopPropagation()}
+            className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
+          >
+            Обадете се
+          </a>
+
+          <a
+            href={makeRequestLink(product.name)}
+            onClick={(event) => event.stopPropagation()}
+            className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
+          >
+            Поръчка / доставка
+          </a>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function ProductsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -165,13 +512,14 @@ function ProductsPageContent() {
   const subcategoryFromUrl = searchParams.get("subcategory");
   const brandFromUrl = searchParams.get("brand");
 
-  const [selectedCategory, setSelectedCategory] = useState("Всички");
+  const [selectedCategory, setSelectedCategory] = useState(allCategoriesLabel);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null,
   );
   const [selectedBrand, setSelectedBrand] = useState(allBrandsLabel);
   const [search, setSearch] = useState("");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [landingFiltersOpen, setLandingFiltersOpen] = useState(false);
+  const [mobileBrowseOpen, setMobileBrowseOpen] = useState(false);
 
   const allBrands = useMemo(() => {
     const productBrands = Array.from(
@@ -193,14 +541,14 @@ function ProductsPageContent() {
     const validCategory =
       categoryFromUrl && categories.includes(categoryFromUrl)
         ? categoryFromUrl
-        : "Всички";
+        : allCategoriesLabel;
 
     const category = catalogCategories.find(
       (item) => item.name === validCategory,
     );
 
     const validSubcategory =
-      validCategory !== "Всички" &&
+      validCategory !== allCategoriesLabel &&
       subcategoryFromUrl &&
       category?.subcategories.includes(subcategoryFromUrl)
         ? subcategoryFromUrl
@@ -218,19 +566,40 @@ function ProductsPageContent() {
     }
   }, [brandFromUrl, allBrands]);
 
+  useEffect(() => {
+    if (!mobileBrowseOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event: globalThis.KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileBrowseOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [mobileBrowseOpen]);
+
   const hasSearch = search.trim().length > 0;
   const hasBrandFilter = selectedBrand !== allBrandsLabel;
+  const isBrowseMode = selectedCategory !== allCategoriesLabel;
 
   const isMainCategoryLanding =
-    selectedCategory === "Всички" &&
+    !isBrowseMode &&
     selectedSubcategory === null &&
     !hasSearch &&
     !hasBrandFilter;
 
   const isSubcategoryLanding =
-    selectedCategory !== "Всички" &&
-    selectedSubcategory === null &&
-    !hasSearch;
+    isBrowseMode && selectedSubcategory === null && !hasSearch;
 
   const filteredProducts = useMemo(() => {
     if (isMainCategoryLanding || isSubcategoryLanding) {
@@ -241,7 +610,7 @@ function ProductsPageContent() {
 
     return products.filter((product) => {
       const matchesCategory =
-        selectedCategory === "Всички" ||
+        selectedCategory === allCategoriesLabel ||
         product.category === selectedCategory;
 
       const matchesSubcategory =
@@ -310,19 +679,21 @@ function ProductsPageContent() {
   function selectCategory(category: string) {
     setSelectedCategory(category);
     setSelectedSubcategory(null);
+    setLandingFiltersOpen(false);
 
     router.replace(makeProductsUrl(category, null, selectedBrand), {
       scroll: false,
     });
   }
 
-  function selectSubcategory(subcategory: string) {
+  function selectSubcategory(category: string, subcategory: string) {
+    setSelectedCategory(category);
     setSelectedSubcategory(subcategory);
+    setMobileBrowseOpen(false);
 
-    router.replace(
-      makeProductsUrl(selectedCategory, subcategory, selectedBrand),
-      { scroll: false },
-    );
+    router.replace(makeProductsUrl(category, subcategory, selectedBrand), {
+      scroll: false,
+    });
   }
 
   function selectBrand(brand: string) {
@@ -335,11 +706,12 @@ function ProductsPageContent() {
   }
 
   function clearFilters() {
-    setSelectedCategory("Всички");
+    setSelectedCategory(allCategoriesLabel);
     setSelectedSubcategory(null);
     setSelectedBrand(allBrandsLabel);
     setSearch("");
-    setFiltersOpen(false);
+    setLandingFiltersOpen(false);
+    setMobileBrowseOpen(false);
 
     router.replace("/products", { scroll: false });
   }
@@ -349,13 +721,12 @@ function ProductsPageContent() {
   }
 
   const activeFilterCount = [
-    selectedCategory !== "Всички",
+    selectedCategory !== allCategoriesLabel,
     selectedSubcategory !== null,
     selectedBrand !== allBrandsLabel,
   ].filter(Boolean).length;
 
-  const hasActiveFilter =
-    activeFilterCount > 0 || search.trim().length > 0;
+  const hasActiveFilter = activeFilterCount > 0 || hasSearch;
 
   const resultMetricValue = isMainCategoryLanding
     ? catalogCategories.length
@@ -374,19 +745,19 @@ function ProductsPageContent() {
       <section className="mx-auto max-w-7xl px-5 py-6 md:px-8">
         <SiteHeader activePage="products" />
 
-        <section className="py-14 md:py-20">
-          <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-8 md:p-12">
+        <section className="py-12 md:py-20">
+          <div className="rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-7 md:p-12">
             <p className="text-sm font-bold uppercase tracking-[0.35em] text-sky-300">
               SKY MUSIC BG
             </p>
 
             <div className="mt-5 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
               <div>
-                <h1 className="max-w-4xl text-5xl font-black leading-tight md:text-7xl">
+                <h1 className="max-w-4xl text-4xl font-black leading-tight md:text-7xl">
                   Продукти
                 </h1>
 
-                <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-300">
+                <p className="mt-5 max-w-3xl text-base leading-7 text-slate-300 md:text-lg md:leading-8">
                   Изберете категория, намерете конкретен вид продукт или
                   използвайте търсачката и филтрите.
                 </p>
@@ -402,7 +773,7 @@ function ProductsPageContent() {
           </div>
         </section>
 
-        <section className="pb-10">
+        <section className="pb-8">
           <div className="rounded-[1.7rem] border border-white/10 bg-white/[0.04] p-4 md:p-5">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
               <div className="relative flex-1">
@@ -423,33 +794,51 @@ function ProductsPageContent() {
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((current) => !current)}
-                aria-expanded={filtersOpen}
-                aria-controls="products-filter-panel"
-                className={
-                  filtersOpen || activeFilterCount > 0
-                    ? "flex cursor-pointer items-center justify-center gap-3 rounded-2xl bg-sky-400 px-6 py-4 font-black text-black transition hover:bg-sky-300"
-                    : "flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-black text-white transition hover:bg-white/10"
-                }
-              >
-                <span>Филтри</span>
-
-                {activeFilterCount > 0 && (
-                  <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-black/15 px-2 text-xs font-black">
-                    {activeFilterCount}
-                  </span>
-                )}
-
-                <span
-                  className={`text-xs transition ${
-                    filtersOpen ? "rotate-180" : ""
-                  }`}
+              {isBrowseMode ? (
+                <button
+                  type="button"
+                  onClick={() => setMobileBrowseOpen(true)}
+                  className="flex cursor-pointer items-center justify-center gap-3 rounded-2xl bg-sky-400 px-6 py-4 font-black text-black transition hover:bg-sky-300 lg:hidden"
                 >
-                  ▾
-                </span>
-              </button>
+                  <span>Категории и филтри</span>
+
+                  {activeFilterCount > 0 && (
+                    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-black/15 px-2 text-xs font-black">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLandingFiltersOpen((current) => !current)
+                  }
+                  aria-expanded={landingFiltersOpen}
+                  aria-controls="landing-filter-panel"
+                  className={
+                    landingFiltersOpen || activeFilterCount > 0
+                      ? "flex cursor-pointer items-center justify-center gap-3 rounded-2xl bg-sky-400 px-6 py-4 font-black text-black transition hover:bg-sky-300"
+                      : "flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-black text-white transition hover:bg-white/10"
+                  }
+                >
+                  <span>Филтри</span>
+
+                  {activeFilterCount > 0 && (
+                    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-black/15 px-2 text-xs font-black">
+                      {activeFilterCount}
+                    </span>
+                  )}
+
+                  <span
+                    className={`text-xs transition ${
+                      landingFiltersOpen ? "rotate-180" : ""
+                    }`}
+                  >
+                    ▾
+                  </span>
+                </button>
+              )}
 
               {hasActiveFilter && (
                 <button
@@ -464,7 +853,7 @@ function ProductsPageContent() {
 
             {hasActiveFilter && (
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {selectedCategory !== "Всички" && (
+                {selectedCategory !== allCategoriesLabel && (
                   <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-4 py-2 text-sm font-bold text-sky-100">
                     {selectedCategory}
                   </span>
@@ -482,7 +871,7 @@ function ProductsPageContent() {
                   </span>
                 )}
 
-                {search.trim().length > 0 && (
+                {hasSearch && (
                   <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-200">
                     „{search}“
                   </span>
@@ -490,80 +879,29 @@ function ProductsPageContent() {
               </div>
             )}
 
-            {filtersOpen && (
+            {!isBrowseMode && landingFiltersOpen && (
               <div
-                id="products-filter-panel"
+                id="landing-filter-panel"
                 className="mt-5 rounded-[1.4rem] border border-white/10 bg-black/20 p-5 md:p-6"
               >
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
-                      Категория
-                    </p>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
+                  Категория
+                </p>
 
-                    {selectedCategory !== "Всички" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {categories
+                    .filter((category) => category !== allCategoriesLabel)
+                    .map((category) => (
                       <button
+                        key={category}
                         type="button"
-                        onClick={() => selectCategory("Всички")}
-                        className="cursor-pointer text-sm font-bold text-slate-400 transition hover:text-white"
+                        onClick={() => selectCategory(category)}
+                        className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-sky-400 hover:text-black"
                       >
-                        Нулирайте категорията
+                        {category}
                       </button>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {categories
-                      .filter((category) => category !== "Всички")
-                      .map((category) => {
-                        const active = selectedCategory === category;
-
-                        return (
-                          <button
-                            key={category}
-                            type="button"
-                            onClick={() => selectCategory(category)}
-                            className={
-                              active
-                                ? "cursor-pointer rounded-full bg-sky-400 px-5 py-3 text-sm font-black text-black"
-                                : "cursor-pointer rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
-                            }
-                          >
-                            {category}
-                          </button>
-                        );
-                      })}
-                  </div>
+                    ))}
                 </div>
-
-                {selectedCategory !== "Всички" && (
-                  <div className="mt-7 border-t border-white/10 pt-6">
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
-                      Подкатегория
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {availableSubcategories.map((subcategory) => {
-                        const active = selectedSubcategory === subcategory;
-
-                        return (
-                          <button
-                            key={subcategory}
-                            type="button"
-                            onClick={() => selectSubcategory(subcategory)}
-                            className={
-                              active
-                                ? "cursor-pointer rounded-full bg-cyan-300 px-5 py-3 text-sm font-black text-black"
-                                : "cursor-pointer rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-slate-300 transition hover:bg-white/10 hover:text-white"
-                            }
-                          >
-                            {subcategory}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
                 <div className="mt-7 border-t border-white/10 pt-6">
                   <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">
@@ -590,24 +928,6 @@ function ProductsPageContent() {
                       );
                     })}
                   </div>
-                </div>
-
-                <div className="mt-7 flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                  >
-                    Изчистете филтрите
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFiltersOpen(false)}
-                    className="cursor-pointer rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
-                  >
-                    Затворете
-                  </button>
                 </div>
               </div>
             )}
@@ -677,223 +997,101 @@ function ProductsPageContent() {
                 })}
               </div>
             </div>
-          ) : isSubcategoryLanding ? (
-            <div>
-              <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-                    {selectedCategory}
-                  </p>
-
-                  <h2 className="mt-3 text-3xl font-black md:text-4xl">
-                    Подкатегории
-                  </h2>
+          ) : isBrowseMode ? (
+            <div className="grid gap-8 lg:grid-cols-[290px_minmax(0,1fr)]">
+              <aside className="hidden lg:block">
+                <div className="sticky top-28">
+                  <BrowseNavigation
+                    selectedCategory={selectedCategory}
+                    selectedSubcategory={selectedSubcategory}
+                    selectedBrand={selectedBrand}
+                    allBrands={allBrands}
+                    onShowAllCategories={clearFilters}
+                    onCategorySelect={selectCategory}
+                    onSubcategorySelect={selectSubcategory}
+                    onBrandSelect={selectBrand}
+                  />
                 </div>
+              </aside>
 
-                <button
-                  type="button"
-                  onClick={() => selectCategory("Всички")}
-                  className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
-                >
-                  ← Основни категории
-                </button>
-              </div>
+              <div className="min-w-0">
+                {isSubcategoryLanding ? (
+                  <div>
+                    <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
+                          {selectedCategory}
+                        </p>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {availableSubcategories.map((subcategory) => (
-                  <button
-                    key={subcategory}
-                    type="button"
-                    onClick={() => selectSubcategory(subcategory)}
-                    className="group flex min-h-[104px] cursor-pointer items-center justify-between gap-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-5 text-left shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:border-sky-400/40 hover:bg-white/[0.07]"
-                  >
-                    <div>
-                      <h3 className="text-lg font-black leading-snug text-white">
-                        {subcategory}
-                      </h3>
-
-                      <p className="mt-2 text-sm font-bold text-slate-400 transition group-hover:text-sky-200">
-                        Разгледайте продуктите
-                      </p>
+                        <h2 className="mt-3 text-3xl font-black md:text-4xl">
+                          Подкатегории
+                        </h2>
+                      </div>
                     </div>
 
-                    <span className="shrink-0 text-xl font-black text-sky-300 transition group-hover:translate-x-1">
-                      →
-                    </span>
-                  </button>
-                ))}
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {availableSubcategories.map((subcategory) => (
+                        <button
+                          key={subcategory}
+                          type="button"
+                          onClick={() =>
+                            selectSubcategory(selectedCategory, subcategory)
+                          }
+                          className="group flex min-h-[104px] cursor-pointer items-center justify-between gap-5 rounded-[1.3rem] border border-white/10 bg-white/[0.04] p-5 text-left shadow-lg shadow-black/20 transition hover:-translate-y-0.5 hover:border-sky-400/40 hover:bg-white/[0.07]"
+                        >
+                          <div>
+                            <h3 className="text-lg font-black leading-snug text-white">
+                              {subcategory}
+                            </h3>
+
+                            <p className="mt-2 text-sm font-bold text-slate-400 transition group-hover:text-sky-200">
+                              Разгледайте продуктите
+                            </p>
+                          </div>
+
+                          <span className="shrink-0 text-xl font-black text-sky-300 transition group-hover:translate-x-1">
+                            →
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : filteredProducts.length > 0 ? (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {filteredProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onOpen={openProduct}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center md:p-14">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-3xl">
+                      ♫
+                    </div>
+
+                    <h2 className="mt-6 text-2xl font-black">
+                      {emptyState.title}
+                    </h2>
+
+                    <p className="mx-auto mt-3 max-w-xl text-slate-400">
+                      {emptyState.description}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ) : filteredProducts.length > 0 ? (
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {filteredProducts.map((product) => {
-                const visual = getCategoryVisual(product.category);
-                const productBadges = (product.badges ?? [])
-                  .filter((badge) => badge !== product.status)
-                  .slice(0, 3);
-                const hasImage = Boolean(product.image);
-
-                return (
-                  <article
-                    key={product.id}
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => openProduct(product.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openProduct(product.id);
-                      }
-                    }}
-                    className="group cursor-pointer overflow-hidden rounded-[1.7rem] border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:border-sky-400/40 hover:bg-white/[0.07]"
-                  >
-                    <div
-                      className={`relative h-72 overflow-hidden ${
-                        hasImage ? "bg-white" : ""
-                      }`}
-                      style={
-                        hasImage ? undefined : { background: visual.gradient }
-                      }
-                    >
-                      {hasImage ? (
-                        <Image
-                          src={product.image as string}
-                          alt={product.name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                          className="object-contain p-6 transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <>
-                          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-300/20 blur-2xl transition group-hover:bg-sky-300/30" />
-                          <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl" />
-
-                          <div className="absolute bottom-6 left-6">
-                            <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/10 bg-white/10 text-5xl shadow-2xl shadow-black/20">
-                              {visual.icon}
-                            </div>
-
-                            <p className="mt-5 max-w-xs text-sm leading-6 text-slate-300">
-                              {visual.subtitle}
-                            </p>
-                          </div>
-                        </>
-                      )}
-
-                      <div className="absolute left-6 right-6 top-6 flex items-start justify-between gap-4">
-                        <span
-                          className={
-                            hasImage
-                              ? "rounded-full bg-black/60 px-3 py-1 text-xs font-bold text-white ring-1 ring-black/10 backdrop-blur"
-                              : "rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-sky-100 ring-1 ring-white/10"
-                          }
-                        >
-                          {product.subcategory}
-                        </span>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(
-                            product.status,
-                          )}`}
-                        >
-                          {product.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-6">
-                      <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-                        {product.brand}
-                      </p>
-
-                      <h2 className="mt-3 text-2xl font-black leading-tight transition group-hover:text-sky-200">
-                        {product.name}
-                      </h2>
-
-                      <p className="mt-4 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
-                        {product.category} · {product.subcategory}
-                      </p>
-
-                      <p className="mt-4 min-h-20 text-sm leading-6 text-slate-400">
-                        {product.description}
-                      </p>
-
-                      {productBadges.length > 0 && (
-                        <div className="mt-5 flex flex-wrap gap-2">
-                          {productBadges.map((badge) => (
-                            <span
-                              key={badge}
-                              className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-sky-100"
-                            >
-                              {badge}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                              Цена
-                            </p>
-
-                            <p className="mt-1 text-3xl font-black">
-                              {product.price}
-                            </p>
-                          </div>
-
-                          <div className="text-right">
-                            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-                              Детайли
-                            </p>
-
-                            <p className="mt-1 text-sm text-slate-300">
-                              Отворете продукта
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 grid grid-cols-2 gap-3">
-                        <a
-                          href={makeProductLink(product.id)}
-                          onClick={(event) => event.stopPropagation()}
-                          className="cursor-pointer rounded-full border border-sky-400/30 bg-sky-400/10 px-4 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
-                        >
-                          Вижте продукта
-                        </a>
-
-                        <a
-                          href={makeWhatsappLink(product.name)}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
-                        >
-                          Запитване
-                        </a>
-
-                        <a
-                          href={`tel:${phone}`}
-                          onClick={(event) => event.stopPropagation()}
-                          className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
-                        >
-                          Обадете се
-                        </a>
-
-                        <a
-                          href={makeRequestLink(product.name)}
-                          onClick={(event) => event.stopPropagation()}
-                          className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-3 text-center text-sm font-black text-white transition hover:scale-[1.01]"
-                        >
-                          Поръчка / доставка
-                        </a>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onOpen={openProduct}
+                />
+              ))}
             </div>
           ) : (
             <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center md:p-14">
@@ -925,6 +1123,57 @@ function ProductsPageContent() {
           </div>
         </footer>
       </section>
+
+      {mobileBrowseOpen && (
+        <div className="fixed inset-0 z-[120] flex flex-col bg-[#05070d] text-white lg:hidden">
+          <div className="shrink-0 border-b border-white/10 px-5 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-300">
+                  Продукти
+                </p>
+
+                <h2 className="mt-1 text-xl font-black">
+                  Категории и филтри
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMobileBrowseOpen(false)}
+                aria-label="Затворете категориите и филтрите"
+                className="relative flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5"
+              >
+                <span className="absolute h-0.5 w-6 rotate-45 bg-white" />
+                <span className="absolute h-0.5 w-6 -rotate-45 bg-white" />
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+            <BrowseNavigation
+              selectedCategory={selectedCategory}
+              selectedSubcategory={selectedSubcategory}
+              selectedBrand={selectedBrand}
+              allBrands={allBrands}
+              onShowAllCategories={clearFilters}
+              onCategorySelect={selectCategory}
+              onSubcategorySelect={selectSubcategory}
+              onBrandSelect={selectBrand}
+            />
+          </div>
+
+          <div className="shrink-0 border-t border-white/10 bg-[#05070d] px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setMobileBrowseOpen(false)}
+              className="w-full cursor-pointer rounded-2xl bg-white px-5 py-4 text-center font-black text-black transition hover:bg-slate-200"
+            >
+              Затворете
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
