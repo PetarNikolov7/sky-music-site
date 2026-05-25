@@ -3,7 +3,6 @@
 import {
   Suspense,
   useEffect,
-  useMemo,
   useState,
   type FormEvent,
 } from "react";
@@ -11,24 +10,20 @@ import { useSearchParams } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 
 const phone = "+359884211761";
-const whatsappNumber = "359884211761";
 const email = "skymusicstorebg@gmail.com";
-const messengerUrl = "https://m.me/skymusicbg";
 
 type DeliveryMethod =
   | "Доставка до адрес"
   | "Вземане от магазина"
   | "Ще уточним допълнително";
 
+type SubmitStatus = "idle" | "sending" | "success" | "error";
+
 const deliveryMethods: DeliveryMethod[] = [
   "Доставка до адрес",
   "Вземане от магазина",
   "Ще уточним допълнително",
 ];
-
-function buildWhatsappLink(message: string) {
-  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
 
 function RequestPageContent() {
   const searchParams = useSearchParams();
@@ -44,42 +39,91 @@ function RequestPageContent() {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
+  const [website, setWebsite] = useState("");
+
+  const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
+  const [submitError, setSubmitError] = useState("");
+
+  const isSending = submitStatus === "sending";
+  const isSuccess = submitStatus === "success";
 
   useEffect(() => {
     setProduct(productFromUrl);
+    setSubmitStatus("idle");
+    setSubmitError("");
   }, [productFromUrl]);
 
-  const whatsappMessage = useMemo(() => {
-    const lines = [
-      "Здравейте, желая да направя поръчка чрез сайта на SKY MUSIC BG.",
-      "",
-      `Продукт: ${product || "не е посочен"}`,
-      `Име: ${name || "не е посочено"}`,
-      `Телефон: ${customerPhone || "не е посочен"}`,
-      `Имейл: ${customerEmail || "не е посочен"}`,
-      `Начин на получаване: ${deliveryMethod}`,
-      `Град: ${city || "не е посочен"}`,
-      `Адрес / офис за доставка: ${address || "не е посочен"}`,
-      `Бележка: ${note || "няма"}`,
-      "",
-      "Моля, свържете се с мен за потвърждение на поръчката и уточняване на доставката или вземането от магазина.",
-    ];
-
-    return lines.join("\n");
-  }, [
-    product,
-    name,
-    customerPhone,
-    customerEmail,
-    deliveryMethod,
-    city,
-    address,
-    note,
-  ]);
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    window.open(buildWhatsappLink(whatsappMessage), "_blank", "noreferrer");
+
+    setSubmitError("");
+
+    if (
+      deliveryMethod === "Доставка до адрес" &&
+      (!city.trim() || !address.trim())
+    ) {
+      setSubmitStatus("error");
+      setSubmitError(
+        "Моля, попълнете град и адрес или офис за доставката.",
+      );
+      return;
+    }
+
+    setSubmitStatus("sending");
+
+    try {
+      const response = await fetch("/api/order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          product,
+          name,
+          phone: customerPhone,
+          email: customerEmail,
+          deliveryMethod,
+          city,
+          address,
+          note,
+          website,
+        }),
+      });
+
+      const result = (await response.json().catch(() => null)) as
+        | { success?: boolean; error?: string }
+        | null;
+
+      if (!response.ok || !result?.success) {
+        throw new Error(
+          result?.error ??
+            "Поръчката не можа да бъде изпратена. Моля, опитайте отново.",
+        );
+      }
+
+      setSubmitStatus("success");
+    } catch (error) {
+      setSubmitStatus("error");
+
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Възникна грешка при изпращане на поръчката.",
+      );
+    }
+  }
+
+  function startNewOrder() {
+    setName("");
+    setCustomerPhone("");
+    setCustomerEmail("");
+    setDeliveryMethod("Доставка до адрес");
+    setCity("");
+    setAddress("");
+    setNote("");
+    setWebsite("");
+    setSubmitStatus("idle");
+    setSubmitError("");
   }
 
   return (
@@ -100,8 +144,8 @@ function RequestPageContent() {
 
               <p className="mt-6 text-lg leading-8 text-slate-300">
                 Попълнете данните за желания продукт и начин на получаване.
-                След изпращане на заявката ние ще се свържем с Вас за
-                потвърждение на поръчката и уточняване на доставката или
+                След изпращане ще получим поръчката Ви директно и ще се
+                свържем с Вас за потвърждение и уточняване на доставката или
                 вземането от магазина.
               </p>
 
@@ -134,31 +178,10 @@ function RequestPageContent() {
 
                 <div className="rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5">
                   <p className="text-sm leading-7 text-slate-200">
-                    Ако имате въпроси преди поръчка, можете да се свържете с
-                    нас по WhatsApp, Messenger, телефон или имейл.
+                    За въпроси преди поръчка можете да се свържете с нас по
+                    телефон или имейл. Поръчката се изпраща директно през тази
+                    страница, без да напускате сайта.
                   </p>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <a
-                      href={buildWhatsappLink(
-                        "Здравейте, имам въпрос относно продукт от SKY MUSIC BG.",
-                      )}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="cursor-pointer rounded-full bg-white px-4 py-3 text-center text-sm font-black text-black transition hover:bg-sky-100"
-                    >
-                      WhatsApp
-                    </a>
-
-                    <a
-                      href={messengerUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="cursor-pointer rounded-full bg-blue-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-blue-500"
-                    >
-                      Messenger
-                    </a>
-                  </div>
                 </div>
               </div>
             </div>
@@ -173,180 +196,284 @@ function RequestPageContent() {
 
           <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 md:p-8">
             <div className="rounded-[2rem] border border-white/10 bg-black/20 p-6 md:p-8">
-              <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
-                Форма за заявка
-              </p>
-
-              <h2 className="mt-4 text-4xl font-black">
-                Данни за поръчка
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-slate-400">
-                Попълнете необходимите данни за връзка и доставка. След
-                изпращане ще се отвори WhatsApp съобщение с готово съдържание,
-                което можете да прегледате преди да го изпратите.
-              </p>
-
-              <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
-                <div>
-                  <label
-                    htmlFor="product"
-                    className="mb-2 block text-sm font-bold text-slate-300"
-                  >
-                    Продукт
-                  </label>
-
-                  <input
-                    id="product"
-                    value={product}
-                    onChange={(event) => setProduct(event.target.value)}
-                    placeholder="Име на продукт"
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                    required
-                  />
-                </div>
-
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="mb-2 block text-sm font-bold text-slate-300"
-                    >
-                      Име и фамилия
-                    </label>
-
-                    <input
-                      id="name"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      placeholder="Вашето име"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                      required
-                    />
+              {isSuccess ? (
+                <div className="py-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/10 text-3xl text-emerald-300 ring-1 ring-emerald-400/25">
+                    ✓
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="mb-2 block text-sm font-bold text-slate-300"
-                    >
-                      Телефон
-                    </label>
+                  <p className="mt-8 text-sm font-black uppercase tracking-[0.35em] text-sky-300">
+                    Поръчката е приета
+                  </p>
 
-                    <input
-                      id="phone"
-                      value={customerPhone}
-                      onChange={(event) => setCustomerPhone(event.target.value)}
-                      placeholder="Телефон за връзка"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                      required
-                    />
+                  <h2 className="mt-4 text-4xl font-black leading-tight">
+                    Благодарим Ви, че избрахте SKY MUSIC BG!
+                  </h2>
+
+                  <p className="mt-5 text-lg leading-8 text-slate-300">
+                    Поръчката Ви е приета успешно. Ще се свържем с Вас за
+                    потвърждение и уточняване на доставката.
+                  </p>
+
+                  {product && (
+                    <div className="mt-8 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
+                      <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">
+                        Поръчан продукт
+                      </p>
+
+                      <p className="mt-3 text-lg font-black text-white">
+                        {product}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <a
+                      href="/products"
+                      className="cursor-pointer rounded-full bg-white px-7 py-4 text-center text-sm font-black text-black transition hover:bg-slate-200"
+                    >
+                      Разгледайте продуктите
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={startNewOrder}
+                      className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-7 py-4 text-center text-sm font-bold text-white transition hover:bg-white/10"
+                    >
+                      Нова поръчка
+                    </button>
                   </div>
                 </div>
+              ) : (
+                <>
+                  <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
+                    Форма за поръчка
+                  </p>
 
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-sm font-bold text-slate-300"
-                  >
-                    Имейл
-                  </label>
+                  <h2 className="mt-4 text-4xl font-black">
+                    Данни за поръчка
+                  </h2>
 
-                  <input
-                    id="email"
-                    type="email"
-                    value={customerEmail}
-                    onChange={(event) => setCustomerEmail(event.target.value)}
-                    placeholder="Имейл за връзка"
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                  />
-                </div>
+                  <p className="mt-4 text-sm leading-7 text-slate-400">
+                    Попълнете необходимите данни за връзка и доставка.
+                    Поръчката ще бъде изпратена директно до SKY MUSIC BG.
+                  </p>
 
-                <div>
-                  <label
-                    htmlFor="delivery-method"
-                    className="mb-2 block text-sm font-bold text-slate-300"
-                  >
-                    Начин на получаване
-                  </label>
+                  <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
+                    <div className="hidden" aria-hidden="true">
+                      <label htmlFor="website">Website</label>
 
-                  <select
-                    id="delivery-method"
-                    value={deliveryMethod}
-                    onChange={(event) =>
-                      setDeliveryMethod(event.target.value as DeliveryMethod)
-                    }
-                    className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
-                  >
-                    {deliveryMethods.map((method) => (
-                      <option key={method} value={method}>
-                        {method}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                      <input
+                        id="website"
+                        name="website"
+                        value={website}
+                        onChange={(event) => setWebsite(event.target.value)}
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+                    </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="city"
-                      className="mb-2 block text-sm font-bold text-slate-300"
+                    <div>
+                      <label
+                        htmlFor="product"
+                        className="mb-2 block text-sm font-bold text-slate-300"
+                      >
+                        Продукт
+                      </label>
+
+                      <input
+                        id="product"
+                        value={product}
+                        onChange={(event) => setProduct(event.target.value)}
+                        placeholder="Име на продукт"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                        required
+                        disabled={isSending}
+                      />
+                    </div>
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="name"
+                          className="mb-2 block text-sm font-bold text-slate-300"
+                        >
+                          Име и фамилия
+                        </label>
+
+                        <input
+                          id="name"
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          placeholder="Вашето име"
+                          autoComplete="name"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                          required
+                          disabled={isSending}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="customer-phone"
+                          className="mb-2 block text-sm font-bold text-slate-300"
+                        >
+                          Телефон
+                        </label>
+
+                        <input
+                          id="customer-phone"
+                          type="tel"
+                          value={customerPhone}
+                          onChange={(event) =>
+                            setCustomerPhone(event.target.value)
+                          }
+                          placeholder="Телефон за връзка"
+                          autoComplete="tel"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                          required
+                          disabled={isSending}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="customer-email"
+                        className="mb-2 block text-sm font-bold text-slate-300"
+                      >
+                        Имейл
+                      </label>
+
+                      <input
+                        id="customer-email"
+                        type="email"
+                        value={customerEmail}
+                        onChange={(event) =>
+                          setCustomerEmail(event.target.value)
+                        }
+                        placeholder="Имейл за връзка"
+                        autoComplete="email"
+                        className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                        disabled={isSending}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="delivery-method"
+                        className="mb-2 block text-sm font-bold text-slate-300"
+                      >
+                        Начин на получаване
+                      </label>
+
+                      <select
+                        id="delivery-method"
+                        value={deliveryMethod}
+                        onChange={(event) =>
+                          setDeliveryMethod(
+                            event.target.value as DeliveryMethod,
+                          )
+                        }
+                        className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
+                        disabled={isSending}
+                      >
+                        {deliveryMethods.map((method) => (
+                          <option key={method} value={method}>
+                            {method}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="city"
+                          className="mb-2 block text-sm font-bold text-slate-300"
+                        >
+                          Град
+                          {deliveryMethod === "Доставка до адрес" && (
+                            <span className="ml-1 text-sky-300">*</span>
+                          )}
+                        </label>
+
+                        <input
+                          id="city"
+                          value={city}
+                          onChange={(event) => setCity(event.target.value)}
+                          placeholder="Град"
+                          autoComplete="address-level2"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                          required={deliveryMethod === "Доставка до адрес"}
+                          disabled={isSending}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="address"
+                          className="mb-2 block text-sm font-bold text-slate-300"
+                        >
+                          Адрес или офис за доставка
+                          {deliveryMethod === "Доставка до адрес" && (
+                            <span className="ml-1 text-sky-300">*</span>
+                          )}
+                        </label>
+
+                        <input
+                          id="address"
+                          value={address}
+                          onChange={(event) => setAddress(event.target.value)}
+                          placeholder="Адрес / офис на куриер"
+                          autoComplete="street-address"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                          required={deliveryMethod === "Доставка до адрес"}
+                          disabled={isSending}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="note"
+                        className="mb-2 block text-sm font-bold text-slate-300"
+                      >
+                        Бележка към поръчката
+                      </label>
+
+                      <textarea
+                        id="note"
+                        value={note}
+                        onChange={(event) => setNote(event.target.value)}
+                        placeholder="Допълнителна информация, въпрос или предпочитан начин за връзка"
+                        rows={5}
+                        className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                        disabled={isSending}
+                      />
+                    </div>
+
+                    {submitStatus === "error" && (
+                      <div
+                        role="alert"
+                        className="rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-bold text-red-100"
+                      >
+                        {submitError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isSending}
+                      className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] disabled:cursor-wait disabled:opacity-70 disabled:hover:scale-100"
                     >
-                      Град
-                    </label>
-
-                    <input
-                      id="city"
-                      value={city}
-                      onChange={(event) => setCity(event.target.value)}
-                      placeholder="Град"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="address"
-                      className="mb-2 block text-sm font-bold text-slate-300"
-                    >
-                      Адрес или офис за доставка
-                    </label>
-
-                    <input
-                      id="address"
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                      placeholder="Адрес / офис на куриер"
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="note"
-                    className="mb-2 block text-sm font-bold text-slate-300"
-                  >
-                    Бележка към поръчката
-                  </label>
-
-                  <textarea
-                    id="note"
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    placeholder="Допълнителна информация, въпрос или предпочитан начин за връзка"
-                    rows={5}
-                    className="w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01]"
-                >
-                  Изпратете заявката в WhatsApp
-                </button>
-              </form>
+                      {isSending
+                        ? "Изпращане на поръчката..."
+                        : "Изпратете поръчката"}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
 
             <div className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
@@ -362,13 +489,13 @@ function RequestPageContent() {
                   },
                   {
                     step: "02",
-                    title: "Изпращате заявката",
+                    title: "Получаваме поръчката",
                     description:
-                      "Формата подготвя WhatsApp съобщение, което можете да прегледате преди изпращане.",
+                      "Заявката се изпраща директно до SKY MUSIC BG, без да напускате сайта.",
                   },
                   {
                     step: "03",
-                    title: "Ние се свързваме с Вас",
+                    title: "Свързваме се с Вас",
                     description:
                       "Потвърждаваме поръчката и уточняваме доставката или вземането от магазина.",
                   },
