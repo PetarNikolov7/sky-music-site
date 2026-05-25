@@ -118,7 +118,7 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
 
             <div className="hidden xl:block">
               <p className="text-xs uppercase tracking-[0.25em] text-slate-400">
-                Музикален магазин в Бургас
+                Музикален магазин
               </p>
 
               <p className="text-sm font-bold text-slate-300">
@@ -127,7 +127,6 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
             </div>
           </Link>
 
-          {/* Desktop navigation */}
           <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
             <Link href="/" className={navigationClass(activePage === "home")}>
               Начало
@@ -261,7 +260,6 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
             </Link>
           </nav>
 
-          {/* Mobile menu button */}
           <button
             type="button"
             onClick={toggleMobileMenu}
@@ -276,7 +274,6 @@ export default function SiteHeader({ activePage = "home" }: SiteHeaderProps) {
         </div>
       </header>
 
-      {/* Full-screen mobile menu */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-[#05070d] text-white lg:hidden">
           <div className="shrink-0 border-b border-white/10 px-5 py-4 md:px-8">
