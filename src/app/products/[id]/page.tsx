@@ -415,13 +415,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </div>
           </div>
         </section>
-
-        <footer className="border-t border-white/10 py-8 text-sm text-slate-500">
-          <div className="flex flex-col justify-between gap-4 md:flex-row">
-            <p>© 2026 SKY MUSIC BG. Всички права запазени.</p>
-            <p>Бургас · {phone}</p>
-          </div>
-        </footer>
       </section>
     </main>
   );

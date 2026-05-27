@@ -97,7 +97,7 @@ function RequestPageContent() {
       if (!response.ok || !result?.success) {
         throw new Error(
           result?.error ??
-            "Поръчката не можа да бъде изпратена. Моля, опитайте отново.",
+            "Заявката не можа да бъде изпратена. Моля, опитайте отново.",
         );
       }
 
@@ -108,7 +108,7 @@ function RequestPageContent() {
       setSubmitError(
         error instanceof Error
           ? error.message
-          : "Възникна грешка при изпращане на поръчката.",
+          : "Възникна грешка при изпращане на заявката.",
       );
     }
   }
@@ -144,7 +144,7 @@ function RequestPageContent() {
 
               <p className="mt-6 text-lg leading-8 text-slate-300">
                 Попълнете данните за желания продукт и начин на получаване.
-                След изпращане ще получим поръчката Ви директно и ще се
+                След изпращане ще получим заявката Ви директно и ще се
                 свържем с Вас за потвърждение и уточняване на доставката или
                 вземането от магазина.
               </p>
@@ -179,7 +179,7 @@ function RequestPageContent() {
                 <div className="rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5">
                   <p className="text-sm leading-7 text-slate-200">
                     За въпроси преди поръчка можете да се свържете с нас по
-                    телефон или имейл. Поръчката се изпраща директно през тази
+                    телефон или имейл. Заявката се изпраща директно през тази
                     страница, без да напускате сайта.
                   </p>
                 </div>
@@ -203,7 +203,7 @@ function RequestPageContent() {
                   </div>
 
                   <p className="mt-8 text-sm font-black uppercase tracking-[0.35em] text-sky-300">
-                    Поръчката е приета
+                    Заявката е получена
                   </p>
 
                   <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -211,14 +211,14 @@ function RequestPageContent() {
                   </h2>
 
                   <p className="mt-5 text-lg leading-8 text-slate-300">
-                    Поръчката Ви е приета успешно. Ще се свържем с Вас за
-                    потвърждение и уточняване на доставката.
+                    Заявката Ви за поръчка е получена успешно. Ще се свържем с
+                    Вас за потвърждение и уточняване на доставката.
                   </p>
 
                   {product && (
                     <div className="mt-8 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
                       <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">
-                        Поръчан продукт
+                        Заявен продукт
                       </p>
 
                       <p className="mt-3 text-lg font-black text-white">
@@ -240,23 +240,23 @@ function RequestPageContent() {
                       onClick={startNewOrder}
                       className="cursor-pointer rounded-full border border-white/10 bg-white/5 px-7 py-4 text-center text-sm font-bold text-white transition hover:bg-white/10"
                     >
-                      Нова поръчка
+                      Нова заявка
                     </button>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="text-sm font-black uppercase tracking-[0.35em] text-sky-300">
-                    Форма за поръчка
+                    Форма за заявка
                   </p>
 
                   <h2 className="mt-4 text-4xl font-black">
-                    Данни за поръчка
+                    Данни за заявка
                   </h2>
 
                   <p className="mt-4 text-sm leading-7 text-slate-400">
                     Попълнете необходимите данни за връзка и доставка.
-                    Поръчката ще бъде изпратена директно до SKY MUSIC BG.
+                    Заявката ще бъде изпратена директно до SKY MUSIC BG.
                   </p>
 
                   <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
@@ -439,7 +439,7 @@ function RequestPageContent() {
                         htmlFor="note"
                         className="mb-2 block text-sm font-bold text-slate-300"
                       >
-                        Бележка към поръчката
+                        Бележка към заявката
                       </label>
 
                       <textarea
@@ -468,9 +468,35 @@ function RequestPageContent() {
                       className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] disabled:cursor-wait disabled:opacity-70 disabled:hover:scale-100"
                     >
                       {isSending
-                        ? "Изпращане на поръчката..."
-                        : "Изпратете поръчката"}
+                        ? "Изпращане на заявката..."
+                        : "Изпратете заявката"}
                     </button>
+
+                    <p className="px-2 text-xs leading-6 text-slate-500">
+                      С изпращането на заявката потвърждавате, че сте
+                      запознати с{" "}
+                      <a
+                        href="/terms"
+                        className="font-bold text-sky-300 transition hover:text-sky-200"
+                      >
+                        Общите условия
+                      </a>
+                      ,{" "}
+                      <a
+                        href="/privacy"
+                        className="font-bold text-sky-300 transition hover:text-sky-200"
+                      >
+                        Политиката за поверителност
+                      </a>{" "}
+                      и условията за{" "}
+                      <a
+                        href="/delivery-payment"
+                        className="font-bold text-sky-300 transition hover:text-sky-200"
+                      >
+                        доставка и плащане
+                      </a>
+                      .
+                    </p>
                   </form>
                 </>
               )}
@@ -489,7 +515,7 @@ function RequestPageContent() {
                   },
                   {
                     step: "02",
-                    title: "Получаваме поръчката",
+                    title: "Получаваме заявката",
                     description:
                       "Заявката се изпраща директно до SKY MUSIC BG, без да напускате сайта.",
                   },
@@ -497,7 +523,7 @@ function RequestPageContent() {
                     step: "03",
                     title: "Свързваме се с Вас",
                     description:
-                      "Потвърждаваме поръчката и уточняваме доставката или вземането от магазина.",
+                      "Свързваме се с Вас за потвърждение и уточняваме доставката или вземането от магазина.",
                   },
                 ].map((item) => (
                   <div
@@ -519,15 +545,6 @@ function RequestPageContent() {
             </div>
           </div>
         </section>
-
-        <footer className="border-t border-white/10 py-8 text-sm text-slate-500">
-          <div className="flex flex-col justify-between gap-4 md:flex-row">
-            <p>© 2026 SKY MUSIC BG. Всички права запазени.</p>
-            <p>
-              Бургас · {phone} · {email}
-            </p>
-          </div>
-        </footer>
       </section>
     </main>
   );
