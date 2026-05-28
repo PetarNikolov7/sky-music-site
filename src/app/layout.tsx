@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Exo_2, Manrope } from "next/font/google";
-import FloatingContactChat from "@/components/FloatingContactChat";
-import SiteFooter from "@/components/SiteFooter";
+import SiteGlobalElements from "@/components/SiteGlobalElements";
 import "./globals.css";
 
 const headingFont = Exo_2({
@@ -95,8 +94,7 @@ export default function RootLayout({
         className={`${headingFont.variable} ${bodyFont.variable} antialiased`}
       >
         {children}
-        <SiteFooter />
-        <FloatingContactChat />
+        <SiteGlobalElements />
       </body>
     </html>
   );
