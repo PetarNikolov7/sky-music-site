@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { signOut } from "../actions";
+import AdminShell from "@/app/admin/components/AdminShell";
+import { requireAdmin } from "@/app/admin/lib/requireAdmin";
 
 export const metadata: Metadata = {
   title: "Admin продукти",
@@ -14,6 +13,8 @@ export const metadata: Metadata = {
 
 type RelationName = { name: string | null } | { name: string | null }[] | null;
 
+type ProductStockStatus = "available" | "on_request" | "out_of_stock";
+
 type AdminProductRow = {
   id: string;
   slug: string;
@@ -22,7 +23,7 @@ type AdminProductRow = {
   short_description: string | null;
   price_amount: number | string | null;
   currency: string | null;
-  stock_status: string | null;
+  stock_status: ProductStockStatus | null;
   is_published: boolean | null;
   is_featured: boolean | null;
   created_at: string | null;
@@ -30,6 +31,18 @@ type AdminProductRow = {
   brands: RelationName;
   categories: RelationName;
   subcategories: RelationName;
+};
+
+type AdminProductsPageProps = {
+  searchParams: Promise<{
+    created?: string;
+  }>;
+};
+
+const stockStatusLabels: Record<ProductStockStatus, string> = {
+  available: "Наличен",
+  on_request: "По заявка",
+  out_of_stock: "Изчерпан",
 };
 
 function getRelationName(value: RelationName) {
@@ -52,30 +65,20 @@ function formatPrice(amount: number | string | null, currency: string | null) {
     return `${amount} ${currency ?? ""}`.trim();
   }
 
-  return new Intl.NumberFormat("bg-BG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericAmount) + ` ${currency ?? "EUR"}`;
+  return (
+    new Intl.NumberFormat("bg-BG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(numericAmount) + ` ${currency ?? "EUR"}`
+  );
 }
 
-function getStockLabel(status: string | null) {
-  if (status === "in_stock") {
-    return "Наличен";
-  }
-
-  if (status === "on_request") {
-    return "По заявка";
-  }
-
-  if (status === "out_of_stock") {
-    return "Изчерпан";
-  }
-
-  return status ?? "—";
+function getStockLabel(status: ProductStockStatus | null) {
+  return status ? stockStatusLabels[status] : "—";
 }
 
-function getStockClassName(status: string | null) {
-  if (status === "in_stock") {
+function getStockClassName(status: ProductStockStatus | null) {
+  if (status === "available") {
     return "bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20";
   }
 
@@ -102,31 +105,11 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export default async function AdminProductsPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    redirect("/admin/login");
-  }
-
-  const { data: adminProfile, error: profileError } = await supabase
-    .from("admin_profiles")
-    .select("display_name, active")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (profileError || !adminProfile?.active) {
-    redirect(
-      `/admin/login?error=${encodeURIComponent(
-        "Този акаунт няма активен административен достъп.",
-      )}`,
-    );
-  }
+export default async function AdminProductsPage({
+  searchParams,
+}: AdminProductsPageProps) {
+  const params = await searchParams;
+  const { supabase, user, adminProfile } = await requireAdmin();
 
   const { data, error } = await supabase
     .from("products")
@@ -154,205 +137,180 @@ export default async function AdminProductsPage() {
   const products = (data ?? []) as unknown as AdminProductRow[];
 
   return (
-    <main className="min-h-screen bg-[#05070d] text-white">
-      <header className="border-b border-white/10 bg-[#060914]">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-5 py-6 md:flex-row md:items-center md:px-8">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.34em] text-sky-300">
-              SKY MUSIC BG / ADMIN
-            </p>
+    <AdminShell
+      activePage="products"
+      title="Продукти"
+      description="Управление на продуктите в базата данни."
+      userEmail={user.email}
+      displayName={adminProfile.displayName}
+    >
+      <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
+            Admin Products v0.2
+          </p>
 
-            <h1 className="mt-3 text-2xl font-black">Продукти</h1>
-          </div>
+          <h2 className="mt-4 text-4xl font-black leading-tight">
+            Продуктов каталог
+          </h2>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Link
-              href="/admin"
-              className="rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.09]"
-            >
-              Табло
-            </Link>
-
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="w-full cursor-pointer rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.09]"
-              >
-                Изход
-              </button>
-            </form>
-          </div>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+            Тази страница чете реалните продукти от Supabase. Можете да добавяте първи продукти без снимки; снимките ще бъдат добавени в отделен Storage batch.
+          </p>
         </div>
-      </header>
 
-      <section className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-              Admin Products v0.1
-            </p>
+        <Link
+          href="/admin/products/new"
+          className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-950/30 transition hover:brightness-110"
+        >
+          Добави продукт
+        </Link>
+      </div>
 
-            <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
-              Управление на продукти
-            </h2>
+      {params.created && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
+          Продуктът „{params.created}“ беше създаден успешно.
+        </div>
+      )}
 
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400 md:text-base">
-              Това е първата административна страница за продуктите. В момента
-              чете директно от Supabase таблицата <strong>products</strong>.
-              Следващият batch ще добави реална форма за създаване на продукт.
-            </p>
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+            Общо продукти
+          </p>
+
+          <p className="mt-4 text-3xl font-black">{products.length}</p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+            Публикувани
+          </p>
+
+          <p className="mt-4 text-3xl font-black">
+            {products.filter((product) => product.is_published).length}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+            Избрани
+          </p>
+
+          <p className="mt-4 text-3xl font-black">
+            {products.filter((product) => product.is_featured).length}
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-8 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm leading-7 text-red-200">
+          <p className="font-black">Грешка при зареждане на продуктите.</p>
+          <p className="mt-2">{error.message}</p>
+        </div>
+      )}
+
+      {!error && products.length === 0 && (
+        <section className="mt-8 rounded-[2rem] border border-dashed border-white/15 bg-white/[0.03] p-8 text-center md:p-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-400/10 text-3xl ring-1 ring-sky-400/20">
+            🎸
           </div>
+
+          <h3 className="mt-6 text-3xl font-black">
+            Все още няма продукти в базата.
+          </h3>
+
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400">
+            Формата за добавяне вече е активна. Първо ще създадем продуктите без снимки, след това ще добавим Supabase Storage за изображения.
+          </p>
 
           <Link
             href="/admin/products/new"
-            className="rounded-2xl bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-950/40 transition hover:brightness-110"
+            className="mt-7 inline-flex rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
           >
-            Добави продукт
+            Добави първия продукт
           </Link>
-        </div>
+        </section>
+      )}
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-              Общо продукти
-            </p>
-
-            <p className="mt-4 text-3xl font-black">{products.length}</p>
+      {!error && products.length > 0 && (
+        <section className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
+          <div className="hidden grid-cols-[1.25fr_0.75fr_0.7fr_0.65fr_0.6fr] gap-5 border-b border-white/10 bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 lg:grid">
+            <p>Продукт</p>
+            <p>Категория</p>
+            <p>Марка</p>
+            <p>Цена</p>
+            <p>Статус</p>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-              Публикувани
-            </p>
+          <div className="divide-y divide-white/10">
+            {products.map((product) => (
+              <article
+                key={product.id}
+                className="grid gap-5 px-5 py-5 lg:grid-cols-[1.25fr_0.75fr_0.7fr_0.65fr_0.6fr] lg:items-center lg:px-6"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg font-black text-white">
+                      {product.name}
+                    </h3>
 
-            <p className="mt-4 text-3xl font-black">
-              {products.filter((product) => product.is_published).length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-              Избрани
-            </p>
-
-            <p className="mt-4 text-3xl font-black">
-              {products.filter((product) => product.is_featured).length}
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mt-8 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm font-bold text-red-200">
-            Възникна грешка при зареждане на продуктите: {error.message}
-          </div>
-        )}
-
-        {!error && products.length === 0 && (
-          <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-10 text-center md:p-14">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-3xl">
-              ♫
-            </div>
-
-            <h3 className="mt-6 text-2xl font-black">
-              Все още няма продукти в базата.
-            </h3>
-
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-400">
-              Публичният сайт все още използва статичния продукт YAMAHA C40.
-              Следващата стъпка е формата за добавяне на продукти в Supabase.
-            </p>
-
-            <Link
-              href="/admin/products/new"
-              className="mt-7 inline-flex rounded-full bg-white px-7 py-4 text-sm font-black text-black transition hover:bg-slate-200"
-            >
-              Добави първия продукт
-            </Link>
-          </div>
-        )}
-
-        {!error && products.length > 0 && (
-          <div className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
-            <div className="hidden grid-cols-[1.3fr_0.8fr_0.8fr_0.65fr_0.65fr] gap-5 border-b border-white/10 bg-white/[0.04] px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-slate-500 lg:grid">
-              <p>Продукт</p>
-              <p>Категория</p>
-              <p>Марка</p>
-              <p>Цена</p>
-              <p>Статус</p>
-            </div>
-
-            <div className="divide-y divide-white/10">
-              {products.map((product) => (
-                <article
-                  key={product.id}
-                  className="grid gap-4 px-5 py-5 lg:grid-cols-[1.3fr_0.8fr_0.8fr_0.65fr_0.65fr] lg:items-center lg:gap-5 lg:px-6"
-                >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-lg font-black text-white">
-                        {product.name}
-                      </h3>
-
-                      {!product.is_published && (
-                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                          Скрит
-                        </span>
-                      )}
-
-                      {product.is_featured && (
-                        <span className="rounded-full bg-sky-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-sky-200 ring-1 ring-sky-400/20">
-                          Избран
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="mt-2 text-sm text-slate-500">
-                      slug: {product.slug}
-                    </p>
-
-                    {product.short_description && (
-                      <p className="mt-3 text-sm leading-6 text-slate-400">
-                        {product.short_description}
-                      </p>
+                    {!product.is_published && (
+                      <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                        Скрит
+                      </span>
                     )}
 
-                    <p className="mt-3 text-xs text-slate-600">
-                      Обновен: {formatDate(product.updated_at)}
-                    </p>
+                    {product.is_featured && (
+                      <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-sky-200">
+                        Избран
+                      </span>
+                    )}
                   </div>
 
-                  <div className="text-sm text-slate-300">
-                    <p className="font-bold text-white">
-                      {getRelationName(product.categories)}
-                    </p>
-                    <p className="mt-1 text-slate-500">
-                      {getRelationName(product.subcategories)}
-                    </p>
-                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {product.short_description || "Без кратко описание."}
+                  </p>
 
-                  <div className="text-sm font-bold text-slate-300">
-                    {getRelationName(product.brands)}
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                    <span>slug: {product.slug}</span>
+                    {product.sku && <span>SKU: {product.sku}</span>}
+                    <span>обновен: {formatDate(product.updated_at)}</span>
                   </div>
+                </div>
 
-                  <div className="text-sm font-black text-white">
-                    {formatPrice(product.price_amount, product.currency)}
-                  </div>
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {getRelationName(product.categories)}
+                  </p>
 
-                  <div>
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] ${getStockClassName(
-                        product.stock_status,
-                      )}`}
-                    >
-                      {getStockLabel(product.stock_status)}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {getRelationName(product.subcategories)}
+                  </p>
+                </div>
+
+                <div className="text-sm font-bold text-slate-300">
+                  {getRelationName(product.brands)}
+                </div>
+
+                <div className="text-sm font-black text-white">
+                  {formatPrice(product.price_amount, product.currency)}
+                </div>
+
+                <div>
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] ${getStockClassName(
+                      product.stock_status,
+                    )}`}
+                  >
+                    {getStockLabel(product.stock_status)}
+                  </span>
+                </div>
+              </article>
+            ))}
           </div>
-        )}
-      </section>
-    </main>
+        </section>
+      )}
+    </AdminShell>
   );
 }
