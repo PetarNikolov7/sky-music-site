@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { signOut } from "./actions";
+import Link from "next/link";
+import AdminShell from "@/app/admin/components/AdminShell";
+import { requireAdmin } from "@/app/admin/lib/requireAdmin";
 
 export const metadata: Metadata = {
   title: "Admin панел",
@@ -12,37 +12,19 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    redirect("/admin/login");
-  }
-
-  const { data: adminProfile, error: profileError } = await supabase
-    .from("admin_profiles")
-    .select("display_name, active")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (profileError || !adminProfile?.active) {
-    redirect(
-      `/admin/login?error=${encodeURIComponent(
-        "Този акаунт няма активен административен достъп.",
-      )}`,
-    );
-  }
+  const { supabase, user, adminProfile } = await requireAdmin();
 
   const [
     { count: productCount },
+    { count: publishedProductCount },
     { count: newOrderCount },
     { count: activeBannerCount },
   ] = await Promise.all([
     supabase.from("products").select("*", { count: "exact", head: true }),
+    supabase
+      .from("products")
+      .select("*", { count: "exact", head: true })
+      .eq("is_published", true),
     supabase
       .from("orders")
       .select("*", { count: "exact", head: true })
@@ -57,7 +39,12 @@ export default async function AdminDashboardPage() {
     {
       label: "Продукти",
       value: productCount ?? 0,
-      description: "в базата данни",
+      description: "общо в базата данни",
+    },
+    {
+      label: "Публикувани",
+      value: publishedProductCount ?? 0,
+      description: "видими за клиентите",
     },
     {
       label: "Нови поръчки",
@@ -69,135 +56,112 @@ export default async function AdminDashboardPage() {
       value: activeBannerCount ?? 0,
       description: "на началната страница",
     },
-    {
-      label: "Admin достъп",
-      value: "Активен",
-      description: "Supabase защита",
-    },
   ];
 
-  const upcomingModules = [
+  const modules = [
     {
       title: "Продукти",
       description:
-        "Добавяне, редактиране, снимки, цена, наличност и публикуване.",
-      badge: "Следващ етап",
+        "Добавяне, редактиране, цена, наличност, публикуване и снимки.",
+      badge: "Активен модул",
+      href: "/admin/products",
+      enabled: true,
     },
     {
       title: "Поръчки",
       description:
         "Нови заявки, статуси, данни за доставка и клиентска комуникация.",
-      badge: "Подготвено",
+      badge: "Следва",
+      href: "/admin/orders",
+      enabled: false,
     },
     {
       title: "Банери",
       description:
         "Промо изображения и подреждане на слайдовете на началната страница.",
       badge: "Подготвено",
+      href: "/admin/banners",
+      enabled: false,
     },
     {
       title: "Еконт / Спиди",
       description:
         "Реален избор на офис, автомат или адрес при заявка за доставка.",
       badge: "Планирано",
+      href: "/admin/shipping",
+      enabled: false,
     },
   ];
 
   return (
-    <main className="min-h-screen bg-[#05070d] text-white">
-      <header className="border-b border-white/10 bg-[#060914]">
-        <div className="mx-auto flex max-w-7xl flex-col justify-between gap-5 px-5 py-6 md:flex-row md:items-center md:px-8">
+    <AdminShell
+      activePage="dashboard"
+      title="Административен панел"
+      description="Първата стабилна основа за управление на магазина."
+      userEmail={user.email}
+      displayName={adminProfile.displayName}
+    >
+      <div className="rounded-[2rem] border border-sky-400/15 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-7 md:p-10">
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
+          Admin Foundation v0.1
+        </p>
+
+        <h2 className="mt-4 max-w-4xl text-4xl font-black leading-tight md:text-5xl">
+          Управлението на магазина е активно.
+        </h2>
+
+        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">
+          Supabase връзката, защитеният вход и RLS правилата работят. Следва
+          изграждане на реалното управление на продуктите.
+        </p>
+      </div>
+
+      <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {dashboardStats.map((item) => (
+          <div
+            key={item.label}
+            className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
+          >
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+              {item.label}
+            </p>
+
+            <p className="mt-4 text-3xl font-black text-white">
+              {item.value}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-400">{item.description}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-10">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.34em] text-sky-300">
-              SKY MUSIC BG / ADMIN
+            <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
+              Модули
             </p>
 
-            <h1 className="mt-3 text-2xl font-black">
-              Административен панел
-            </h1>
+            <h2 className="mt-3 text-3xl font-black">
+              Управление на магазина
+            </h2>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm">
-              <p className="font-bold text-white">
-                {adminProfile.display_name || "Admin"}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">{user.email}</p>
-            </div>
-
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="w-full cursor-pointer rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 text-sm font-black text-white transition hover:bg-white/[0.09]"
-              >
-                Изход
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
-        <div className="rounded-[2rem] border border-sky-400/15 bg-gradient-to-br from-slate-900 via-blue-950/40 to-black p-7 md:p-10">
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Foundation v0.1
-          </p>
-
-          <h2 className="mt-4 max-w-4xl text-4xl font-black leading-tight md:text-5xl">
-            Защитеният административен достъп е активен.
-          </h2>
-
-          <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">
-            Това е първата работеща основа на управлението на магазина.
-            Следващата стъпка е реалният модул за добавяне и редактиране на
-            продукти.
+          <p className="max-w-xl text-sm leading-7 text-slate-400">
+            Активираме модулите последователно, след build и тест на всеки
+            стабилен етап.
           </p>
         </div>
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {dashboardStats.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
-            >
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-                {item.label}
-              </p>
-
-              <p className="mt-4 text-3xl font-black text-white">
-                {item.value}
-              </p>
-
-              <p className="mt-2 text-sm text-slate-400">
-                {item.description}
-              </p>
-            </div>
-          ))}
-        </section>
-
-        <section className="mt-10">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-                Следващи модули
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black">
-                Управление на магазина
-              </h2>
-            </div>
-
-            <p className="max-w-xl text-sm leading-7 text-slate-400">
-              Модулите ще се активират последователно, след build и тест на
-              всеки стабилен етап.
-            </p>
-          </div>
-
-          <div className="mt-7 grid gap-5 md:grid-cols-2">
-            {upcomingModules.map((module) => (
+        <div className="mt-7 grid gap-5 md:grid-cols-2">
+          {modules.map((module) => {
+            const content = (
               <article
-                key={module.title}
-                className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
+                className={
+                  module.enabled
+                    ? "h-full rounded-[1.5rem] border border-sky-400/20 bg-sky-400/[0.07] p-6 transition hover:-translate-y-0.5 hover:bg-sky-400/[0.1]"
+                    : "h-full rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6"
+                }
               >
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="text-2xl font-black">{module.title}</h3>
@@ -210,23 +174,39 @@ export default async function AdminDashboardPage() {
                 <p className="mt-4 text-sm leading-7 text-slate-400">
                   {module.description}
                 </p>
+
+                {module.enabled && (
+                  <p className="mt-5 text-sm font-black text-sky-200">
+                    Отворете модула →
+                  </p>
+                )}
               </article>
-            ))}
-          </div>
-        </section>
+            );
 
-        <section className="mt-10 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
-            Сигурност
-          </p>
+            if (!module.enabled) {
+              return <div key={module.title}>{content}</div>;
+            }
 
-          <div className="mt-5 grid gap-4 text-sm leading-7 text-slate-300 md:grid-cols-3">
-            <p>Публичната регистрация е изключена.</p>
-            <p>Само активен admin профил има достъп.</p>
-            <p>Поръчките и редакциите са защитени чрез Supabase RLS.</p>
-          </div>
-        </section>
+            return (
+              <Link key={module.title} href={module.href}>
+                {content}
+              </Link>
+            );
+          })}
+        </div>
       </section>
-    </main>
+
+      <section className="mt-10 rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-6">
+        <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">
+          Сигурност
+        </p>
+
+        <div className="mt-5 grid gap-4 text-sm leading-7 text-slate-300 md:grid-cols-3">
+          <p>Публичната регистрация е изключена.</p>
+          <p>Само активен admin профил има достъп.</p>
+          <p>Поръчките и редакциите са защитени чрез Supabase RLS.</p>
+        </div>
+      </section>
+    </AdminShell>
   );
 }
