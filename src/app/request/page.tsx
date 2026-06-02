@@ -43,6 +43,7 @@ function RequestPageContent() {
 
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const [submitError, setSubmitError] = useState("");
+  const [orderNumber, setOrderNumber] = useState<number | null>(null);
 
   const isSending = submitStatus === "sending";
   const isSuccess = submitStatus === "success";
@@ -51,6 +52,7 @@ function RequestPageContent() {
     setProduct(productFromUrl);
     setSubmitStatus("idle");
     setSubmitError("");
+    setOrderNumber(null);
   }, [productFromUrl]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -91,7 +93,7 @@ function RequestPageContent() {
       });
 
       const result = (await response.json().catch(() => null)) as
-        | { success?: boolean; error?: string }
+        | { success?: boolean; error?: string; orderNumber?: number | string }
         | null;
 
       if (!response.ok || !result?.success) {
@@ -101,6 +103,11 @@ function RequestPageContent() {
         );
       }
 
+      const receivedOrderNumber = Number(result.orderNumber);
+
+      setOrderNumber(
+        Number.isFinite(receivedOrderNumber) ? receivedOrderNumber : null,
+      );
       setSubmitStatus("success");
     } catch (error) {
       setSubmitStatus("error");
@@ -122,6 +129,7 @@ function RequestPageContent() {
     setAddress("");
     setNote("");
     setWebsite("");
+    setOrderNumber(null);
     setSubmitStatus("idle");
     setSubmitError("");
   }
@@ -215,8 +223,20 @@ function RequestPageContent() {
                     Вас за потвърждение и уточняване на доставката.
                   </p>
 
+                  {orderNumber && (
+                    <div className="mt-8 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+                      <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">
+                        Номер на заявка
+                      </p>
+
+                      <p className="mt-3 text-3xl font-black text-white">
+                        #{orderNumber}
+                      </p>
+                    </div>
+                  )}
+
                   {product && (
-                    <div className="mt-8 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
+                    <div className="mt-5 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
                       <p className="text-xs font-black uppercase tracking-[0.25em] text-slate-400">
                         Заявен продукт
                       </p>

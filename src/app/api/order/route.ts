@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,20 @@ type OrderPayload = {
   address?: unknown;
   note?: unknown;
   website?: unknown;
+};
+
+type FulfillmentMethod =
+  | "pickup_store"
+  | "courier_office"
+  | "courier_locker"
+  | "courier_address"
+  | "to_confirm";
+
+type ProductLookup = {
+  id: string;
+  sku: string | null;
+  price_amount: number | string | null;
+  currency: string | null;
 };
 
 function cleanText(value: unknown, maxLength: number) {
@@ -48,24 +63,129 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function mapFulfillmentMethod(deliveryMethod: string): FulfillmentMethod {
+  if (deliveryMethod === "Вземане от магазина") {
+    return "pickup_store";
+  }
+
+  if (deliveryMethod === "Доставка до адрес") {
+    return "courier_address";
+  }
+
+  return "to_confirm";
+}
+
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Supabase service role key is not configured.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
+async function findProductByName(productName: string) {
+  const supabase = createServiceRoleClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, sku, price_amount, currency")
+    .eq("name", productName)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Order product lookup error:", error);
+    return null;
+  }
+
+  return data as ProductLookup | null;
+}
+
+async function createOrderRecord({
+  product,
+  name,
+  phone,
+  email,
+  deliveryMethod,
+  city,
+  address,
+  note,
+}: {
+  product: string;
+  name: string;
+  phone: string;
+  email: string;
+  deliveryMethod: string;
+  city: string;
+  address: string;
+  note: string;
+}) {
+  const supabase = createServiceRoleClient();
+  const fulfillmentMethod = mapFulfillmentMethod(deliveryMethod);
+  const productRecord = await findProductByName(product);
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert({
+      source: "website",
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email || null,
+      fulfillment_method: fulfillmentMethod,
+      courier: null,
+      delivery_city: city || null,
+      delivery_address: address || null,
+      payment_method: "to_confirm",
+      customer_note: note || null,
+      terms_version: "terms-2026-05-28",
+      privacy_version: "privacy-2026-05-28",
+    })
+    .select("id, order_number")
+    .single();
+
+  if (orderError || !order) {
+    console.error("Supabase order insert error:", orderError);
+    throw new Error("Поръчката не можа да бъде записана.");
+  }
+
+  const { error: itemError } = await supabase.from("order_items").insert({
+    order_id: order.id,
+    product_id: productRecord?.id ?? null,
+    product_name: product,
+    product_sku: productRecord?.sku ?? null,
+    quantity: 1,
+    unit_price_amount: productRecord?.price_amount ?? null,
+    currency: productRecord?.currency ?? "EUR",
+  });
+
+  if (itemError) {
+    console.error("Supabase order item insert error:", itemError);
+    throw new Error("Редът с продукта към поръчката не можа да бъде записан.");
+  }
+
+  return {
+    id: order.id as string,
+    orderNumber: order.order_number as number,
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Email услугата не е конфигурирана." },
-        { status: 500 },
-      );
-    }
-
     const body = (await request.json()) as OrderPayload;
 
     const website = cleanText(body.website, 200);
 
     /*
-      Скритото поле website ще бъде добавено във формата като basic spam trap.
-      Ако бот го попълни, връщаме успешен отговор без да изпращаме имейл.
+      Скритото поле website е basic spam trap.
+      Ако бот го попълни, връщаме успешен отговор без запис и без имейл.
     */
     if (website) {
       return NextResponse.json({ success: true });
@@ -97,16 +217,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const orderRecord = await createOrderRecord({
+      product,
+      name,
+      phone,
+      email,
+      deliveryMethod,
+      city,
+      address,
+      note,
+    });
+
     const submittedAt = new Intl.DateTimeFormat("bg-BG", {
       dateStyle: "medium",
       timeStyle: "short",
       timeZone: "Europe/Sofia",
     }).format(new Date());
 
-    const subject = `Нова поръчка от сайта: ${product}`;
+    const subject = `Нова поръчка #${orderRecord.orderNumber} от сайта: ${product}`;
 
     const textContent = [
-      "НОВА ПОРЪЧКА — SKY MUSIC BG",
+      `НОВА ПОРЪЧКА #${orderRecord.orderNumber} — SKY MUSIC BG`,
       "",
       `Продукт: ${product}`,
       "",
@@ -133,7 +264,7 @@ export async function POST(request: NextRequest) {
             <p style="margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:0.22em;color:#7dd3fc;">
               SKY MUSIC BG
             </p>
-            <h1 style="margin:0;font-size:26px;line-height:1.3;">Нова поръчка от сайта</h1>
+            <h1 style="margin:0;font-size:26px;line-height:1.3;">Нова поръчка #${htmlValue(String(orderRecord.orderNumber))} от сайта</h1>
           </div>
 
           <div style="padding:30px 32px;">
@@ -167,32 +298,39 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    const resend = new Resend(apiKey);
+    const apiKey = process.env.RESEND_API_KEY;
+    let emailSent = false;
+    let emailId: string | undefined;
 
-    const { data, error } = await resend.emails.send({
-      from:
-        process.env.ORDER_SENDER_EMAIL ??
-        "SKY MUSIC BG <onboarding@resend.dev>",
-      to: [
-        process.env.ORDER_RECEIVER_EMAIL ?? "skymusicstorebg@gmail.com",
-      ],
-      subject,
-      html: htmlContent,
-      text: textContent,
-    });
+    if (apiKey) {
+      const resend = new Resend(apiKey);
 
-    if (error) {
-      console.error("Resend order email error:", error);
+      const { data, error } = await resend.emails.send({
+        from:
+          process.env.ORDER_SENDER_EMAIL ??
+          "SKY MUSIC BG <onboarding@resend.dev>",
+        to: [process.env.ORDER_RECEIVER_EMAIL ?? "skymusicstorebg@gmail.com"],
+        subject,
+        html: htmlContent,
+        text: textContent,
+      });
 
-      return NextResponse.json(
-        { error: "Поръчката не можа да бъде изпратена. Моля, опитайте отново." },
-        { status: 500 },
-      );
+      if (error) {
+        console.error("Resend order email error:", error);
+      } else {
+        emailSent = true;
+        emailId = data?.id;
+      }
+    } else {
+      console.error("RESEND_API_KEY is not configured. Order saved without email.");
     }
 
     return NextResponse.json({
       success: true,
-      id: data?.id,
+      id: emailId,
+      orderId: orderRecord.id,
+      orderNumber: orderRecord.orderNumber,
+      emailSent,
     });
   } catch (error) {
     console.error("Order API error:", error);

@@ -29,7 +29,7 @@ const navItems = [
     label: "Поръчки",
     href: "/admin/orders",
     key: "orders",
-    enabled: false,
+    enabled: true,
   },
   {
     label: "Банери",
