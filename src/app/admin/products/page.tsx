@@ -15,6 +15,13 @@ type RelationName = { name: string | null } | { name: string | null }[] | null;
 
 type ProductStockStatus = "available" | "on_request" | "out_of_stock";
 
+type ProductImageRow = {
+  storage_path: string | null;
+  alt_text: string | null;
+  is_primary: boolean | null;
+  sort_order: number | null;
+};
+
 type AdminProductRow = {
   id: string;
   slug: string;
@@ -31,11 +38,14 @@ type AdminProductRow = {
   brands: RelationName;
   categories: RelationName;
   subcategories: RelationName;
+  product_images: ProductImageRow[] | null;
 };
 
 type AdminProductsPageProps = {
   searchParams: Promise<{
     created?: string;
+    imageUploaded?: string;
+    imageDeleted?: string;
   }>;
 };
 
@@ -105,6 +115,21 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
+function getPrimaryImage(images: ProductImageRow[] | null) {
+  if (!images || images.length === 0) {
+    return null;
+  }
+
+  return (
+    images.find((image) => image.is_primary) ??
+    [...images].sort((first, second) => {
+      const firstOrder = first.sort_order ?? 0;
+      const secondOrder = second.sort_order ?? 0;
+      return firstOrder - secondOrder;
+    })[0]
+  );
+}
+
 export default async function AdminProductsPage({
   searchParams,
 }: AdminProductsPageProps) {
@@ -129,7 +154,8 @@ export default async function AdminProductsPage({
         updated_at,
         brands(name),
         categories(name),
-        subcategories(name)
+        subcategories(name),
+        product_images(storage_path, alt_text, is_primary, sort_order)
       `,
     )
     .order("updated_at", { ascending: false });
@@ -147,7 +173,7 @@ export default async function AdminProductsPage({
       <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Products v0.2
+            Admin Products v0.3b
           </p>
 
           <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -155,7 +181,8 @@ export default async function AdminProductsPage({
           </h2>
 
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Тази страница чете реалните продукти от Supabase. Можете да добавяте първи продукти без снимки; снимките ще бъдат добавени в отделен Storage batch.
+            Продуктите вече могат да имат снимки от Supabase Storage. Отворете
+            „Снимки“ към продукт, за да качите основно изображение и галерия.
           </p>
         </div>
 
@@ -170,6 +197,18 @@ export default async function AdminProductsPage({
       {params.created && (
         <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
           Продуктът „{params.created}“ беше създаден успешно.
+        </div>
+      )}
+
+      {params.imageUploaded && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
+          Снимката беше качена успешно.
+        </div>
+      )}
+
+      {params.imageDeleted && (
+        <div className="mt-6 rounded-2xl border border-sky-400/25 bg-sky-400/[0.08] p-5 text-sm font-bold leading-7 text-sky-100">
+          Снимката беше премахната успешно.
         </div>
       )}
 
@@ -194,11 +233,11 @@ export default async function AdminProductsPage({
 
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
-            Избрани
+            Със снимки
           </p>
 
           <p className="mt-4 text-3xl font-black">
-            {products.filter((product) => product.is_featured).length}
+            {products.filter((product) => product.product_images?.length).length}
           </p>
         </div>
       </div>
@@ -221,7 +260,8 @@ export default async function AdminProductsPage({
           </h3>
 
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-            Формата за добавяне вече е активна. Първо ще създадем продуктите без снимки, след това ще добавим Supabase Storage за изображения.
+            Формата за добавяне е активна. След създаване на продукт ще можете
+            да качвате снимки към него.
           </p>
 
           <Link
@@ -235,7 +275,8 @@ export default async function AdminProductsPage({
 
       {!error && products.length > 0 && (
         <section className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
-          <div className="hidden grid-cols-[1.25fr_0.75fr_0.7fr_0.65fr_0.6fr] gap-5 border-b border-white/10 bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 lg:grid">
+          <div className="hidden grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.56fr] gap-5 border-b border-white/10 bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 lg:grid">
+            <p>Снимка</p>
             <p>Продукт</p>
             <p>Категория</p>
             <p>Марка</p>
@@ -244,70 +285,110 @@ export default async function AdminProductsPage({
           </div>
 
           <div className="divide-y divide-white/10">
-            {products.map((product) => (
-              <article
-                key={product.id}
-                className="grid gap-5 px-5 py-5 lg:grid-cols-[1.25fr_0.75fr_0.7fr_0.65fr_0.6fr] lg:items-center lg:px-6"
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-black text-white">
-                      {product.name}
-                    </h3>
+            {products.map((product) => {
+              const primaryImage = getPrimaryImage(product.product_images);
+              const imageUrl = primaryImage?.storage_path
+                ? supabase.storage
+                    .from("product-images")
+                    .getPublicUrl(primaryImage.storage_path).data.publicUrl
+                : null;
 
-                    {!product.is_published && (
-                      <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                        Скрит
-                      </span>
-                    )}
-
-                    {product.is_featured && (
-                      <span className="rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-sky-200">
-                        Избран
-                      </span>
+              return (
+                <article
+                  key={product.id}
+                  className="grid gap-5 px-5 py-5 lg:grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.56fr] lg:items-center lg:px-6"
+                >
+                  <div>
+                    {imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imageUrl}
+                        alt={primaryImage?.alt_text || product.name}
+                        className="h-20 w-20 rounded-2xl border border-white/10 bg-white object-contain p-2"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-2xl text-slate-500">
+                        ♫
+                      </div>
                     )}
                   </div>
 
-                  <p className="mt-2 text-sm leading-6 text-slate-400">
-                    {product.short_description || "Без кратко описание."}
-                  </p>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-black text-white">
+                        {product.name}
+                      </h3>
 
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-                    <span>slug: {product.slug}</span>
-                    {product.sku && <span>SKU: {product.sku}</span>}
-                    <span>обновен: {formatDate(product.updated_at)}</span>
+                      {!product.is_published && (
+                        <span className="rounded-full bg-white/[0.06] px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                          Скрит
+                        </span>
+                      )}
+
+                      {product.is_featured && (
+                        <span className="rounded-full bg-sky-400/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-sky-200 ring-1 ring-sky-400/20">
+                          Избран
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      slug: {product.slug}
+                    </p>
+
+                    {product.short_description && (
+                      <p className="mt-3 text-sm leading-6 text-slate-400">
+                        {product.short_description}
+                      </p>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/products/${product.id}/images`}
+                        className="rounded-full bg-white px-4 py-2 text-xs font-black text-black transition hover:bg-slate-200"
+                      >
+                        Снимки
+                      </Link>
+
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-slate-400">
+                        Редакция скоро
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-xs text-slate-600">
+                      Обновен: {formatDate(product.updated_at)}
+                    </p>
                   </div>
-                </div>
 
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    {getRelationName(product.categories)}
-                  </p>
+                  <div className="text-sm text-slate-300">
+                    <p className="font-bold text-white">
+                      {getRelationName(product.categories)}
+                    </p>
+                    <p className="mt-1 text-slate-500">
+                      {getRelationName(product.subcategories)}
+                    </p>
+                  </div>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    {getRelationName(product.subcategories)}
-                  </p>
-                </div>
+                  <div className="text-sm font-bold text-slate-300">
+                    {getRelationName(product.brands)}
+                  </div>
 
-                <div className="text-sm font-bold text-slate-300">
-                  {getRelationName(product.brands)}
-                </div>
+                  <div className="text-sm font-black text-white">
+                    {formatPrice(product.price_amount, product.currency)}
+                  </div>
 
-                <div className="text-sm font-black text-white">
-                  {formatPrice(product.price_amount, product.currency)}
-                </div>
-
-                <div>
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] ${getStockClassName(
-                      product.stock_status,
-                    )}`}
-                  >
-                    {getStockLabel(product.stock_status)}
-                  </span>
-                </div>
-              </article>
-            ))}
+                  <div>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.16em] ${getStockClassName(
+                        product.stock_status,
+                      )}`}
+                    >
+                      {getStockLabel(product.stock_status)}
+                    </span>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}
