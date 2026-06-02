@@ -386,6 +386,13 @@ export default async function AdminProductsPage({
                         Снимки
                       </Link>
 
+                      <Link
+                        href={`/admin/products/${product.id}/specs`}
+                        className="rounded-full border border-sky-400/25 bg-sky-400/10 px-4 py-2 text-xs font-black text-sky-100 transition hover:bg-sky-400/20"
+                      >
+                        Характеристики
+                      </Link>
+
                       <form action={toggleProductPublished}>
                         <input type="hidden" name="product_id" value={product.id} />
                         <input
