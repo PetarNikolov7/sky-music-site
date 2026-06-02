@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/app/admin/lib/requireAdmin";
 
-function redirectWithError(message: string): never {
-  redirect(`/admin/products/new?error=${encodeURIComponent(message)}`);
+function redirectWithError(path: string, message: string): never {
+  redirect(`${path}?error=${encodeURIComponent(message)}`);
 }
 
 function getText(formData: FormData, key: string) {
@@ -82,9 +82,7 @@ function parseBadges(value: string) {
     .slice(0, 12);
 }
 
-export async function createProduct(formData: FormData) {
-  const { supabase, user } = await requireAdmin();
-
+function validateSharedProductInput(formData: FormData, errorPath: string) {
   const name = getText(formData, "name");
   const slug = slugify(getText(formData, "slug"));
   const sku = getOptionalText(formData, "sku");
@@ -102,70 +100,69 @@ export async function createProduct(formData: FormData) {
   const isFeatured = formData.get("is_featured") === "on";
 
   if (name.length < 2) {
-    redirectWithError("Моля, въведете име на продукта.");
+    redirectWithError(errorPath, "Моля, въведете име на продукта.");
   }
 
   if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-    redirectWithError("Slug трябва да съдържа само малки латински букви, цифри и тирета.");
+    redirectWithError(
+      errorPath,
+      "Slug трябва да съдържа само малки латински букви, цифри и тирета.",
+    );
   }
 
   if (!categoryId || !subcategoryId) {
-    redirectWithError("Моля, изберете категория и подкатегория.");
+    redirectWithError(errorPath, "Моля, изберете категория и подкатегория.");
   }
 
   if (!priceAmount) {
-    redirectWithError("Моля, въведете валидна цена.");
+    redirectWithError(errorPath, "Моля, въведете валидна цена.");
   }
 
-  if (!["EUR", "BGN"].includes(currency)) {
-    redirectWithError("Моля, изберете валута EUR или BGN.");
+  if (!currency || !["EUR", "BGN"].includes(currency)) {
+    redirectWithError(errorPath, "Моля, изберете валута EUR или BGN.");
   }
 
   if (!["available", "on_request", "out_of_stock"].includes(stockStatus)) {
-    redirectWithError("Моля, изберете валиден статус на наличност.");
+    redirectWithError(errorPath, "Моля, изберете валиден статус на наличност.");
   }
 
-  const { data: existingProduct } = await supabase
-    .from("products")
-    .select("id")
-    .eq("slug", slug)
-    .maybeSingle();
+  return {
+    name,
+    slug,
+    sku,
+    brandIdFromForm,
+    newBrandName,
+    categoryId,
+    subcategoryId,
+    shortDescription,
+    description,
+    priceAmount,
+    currency,
+    stockStatus,
+    badges,
+    isPublished,
+    isFeatured,
+  };
+}
 
-  if (existingProduct) {
-    redirectWithError("Вече има продукт с този slug. Променете slug-а.");
-  }
-
-  if (sku) {
-    const { data: existingSku } = await supabase
-      .from("products")
-      .select("id")
-      .eq("sku", sku)
-      .maybeSingle();
-
-    if (existingSku) {
-      redirectWithError("Вече има продукт с този SKU.");
-    }
-  }
-
-  const { data: selectedSubcategory, error: subcategoryError } = await supabase
-    .from("subcategories")
-    .select("id, category_id")
-    .eq("id", subcategoryId)
-    .eq("category_id", categoryId)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (subcategoryError || !selectedSubcategory) {
-    redirectWithError("Избраната подкатегория не принадлежи към избраната категория.");
-  }
-
+async function resolveBrandId({
+  supabase,
+  brandIdFromForm,
+  newBrandName,
+  errorPath,
+}: {
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+  brandIdFromForm: string;
+  newBrandName: string;
+  errorPath: string;
+}) {
   let brandId: string | null = brandIdFromForm || null;
 
   if (newBrandName) {
     const brandSlug = slugify(newBrandName);
 
     if (!brandSlug) {
-      redirectWithError("Новата марка трябва да има валидно име.");
+      redirectWithError(errorPath, "Новата марка трябва да има валидно име.");
     }
 
     const { data: existingBrand, error: existingBrandError } = await supabase
@@ -175,7 +172,7 @@ export async function createProduct(formData: FormData) {
       .maybeSingle();
 
     if (existingBrandError) {
-      redirectWithError("Възникна грешка при проверка на марката.");
+      redirectWithError(errorPath, "Възникна грешка при проверка на марката.");
     }
 
     if (existingBrand) {
@@ -192,7 +189,7 @@ export async function createProduct(formData: FormData) {
         .single();
 
       if (insertBrandError || !insertedBrand) {
-        redirectWithError("Новата марка не можа да бъде създадена.");
+        redirectWithError(errorPath, "Новата марка не можа да бъде създадена.");
       }
 
       brandId = insertedBrand.id;
@@ -200,7 +197,7 @@ export async function createProduct(formData: FormData) {
   }
 
   if (!brandId) {
-    redirectWithError("Моля, изберете марка или въведете нова марка.");
+    redirectWithError(errorPath, "Моля, изберете марка или въведете нова марка.");
   }
 
   const { data: selectedBrand, error: selectedBrandError } = await supabase
@@ -211,26 +208,97 @@ export async function createProduct(formData: FormData) {
     .maybeSingle();
 
   if (selectedBrandError || !selectedBrand) {
-    redirectWithError("Избраната марка не е активна.");
+    redirectWithError(errorPath, "Избраната марка не е активна.");
   }
+
+  return brandId;
+}
+
+async function assertCategoryAndSubcategory({
+  supabase,
+  categoryId,
+  subcategoryId,
+  errorPath,
+}: {
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+  categoryId: string;
+  subcategoryId: string;
+  errorPath: string;
+}) {
+  const { data: selectedSubcategory, error: subcategoryError } = await supabase
+    .from("subcategories")
+    .select("id, category_id")
+    .eq("id", subcategoryId)
+    .eq("category_id", categoryId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (subcategoryError || !selectedSubcategory) {
+    redirectWithError(
+      errorPath,
+      "Избраната подкатегория не принадлежи към избраната категория.",
+    );
+  }
+}
+
+export async function createProduct(formData: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const errorPath = "/admin/products/new";
+  const input = validateSharedProductInput(formData, errorPath);
+
+  const { data: existingProduct } = await supabase
+    .from("products")
+    .select("id")
+    .eq("slug", input.slug)
+    .maybeSingle();
+
+  if (existingProduct) {
+    redirectWithError(errorPath, "Вече има продукт с този slug. Променете slug-а.");
+  }
+
+  if (input.sku) {
+    const { data: existingSku } = await supabase
+      .from("products")
+      .select("id")
+      .eq("sku", input.sku)
+      .maybeSingle();
+
+    if (existingSku) {
+      redirectWithError(errorPath, "Вече има продукт с този SKU.");
+    }
+  }
+
+  await assertCategoryAndSubcategory({
+    supabase,
+    categoryId: input.categoryId,
+    subcategoryId: input.subcategoryId,
+    errorPath,
+  });
+
+  const brandId = await resolveBrandId({
+    supabase,
+    brandIdFromForm: input.brandIdFromForm,
+    newBrandName: input.newBrandName,
+    errorPath,
+  });
 
   const { data: insertedProduct, error: insertProductError } = await supabase
     .from("products")
     .insert({
-      slug,
-      sku,
-      name,
+      slug: input.slug,
+      sku: input.sku,
+      name: input.name,
       brand_id: brandId,
-      category_id: categoryId,
-      subcategory_id: subcategoryId,
-      short_description: shortDescription,
-      description,
-      price_amount: priceAmount,
-      currency,
-      stock_status: stockStatus,
-      badges,
-      is_published: isPublished,
-      is_featured: isFeatured,
+      category_id: input.categoryId,
+      subcategory_id: input.subcategoryId,
+      short_description: input.shortDescription,
+      description: input.description,
+      price_amount: input.priceAmount,
+      currency: input.currency,
+      stock_status: input.stockStatus,
+      badges: input.badges,
+      is_published: input.isPublished,
+      is_featured: input.isFeatured,
       created_by: user.id,
       updated_by: user.id,
     })
@@ -238,8 +306,137 @@ export async function createProduct(formData: FormData) {
     .single();
 
   if (insertProductError || !insertedProduct) {
-    redirectWithError(insertProductError?.message ?? "Продуктът не можа да бъде създаден.");
+    redirectWithError(
+      errorPath,
+      insertProductError?.message ?? "Продуктът не можа да бъде създаден.",
+    );
   }
 
-  redirect(`/admin/products?created=${encodeURIComponent(name)}`);
+  redirect(`/admin/products?created=${encodeURIComponent(input.name)}`);
+}
+
+export async function updateProduct(formData: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const productId = getText(formData, "product_id");
+  const errorPath = productId
+    ? `/admin/products/${productId}/edit`
+    : "/admin/products";
+
+  if (!productId) {
+    redirectWithError("/admin/products", "Липсва продукт за редакция.");
+  }
+
+  const input = validateSharedProductInput(formData, errorPath);
+
+  const { data: existingProduct, error: existingProductError } = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (existingProductError || !existingProduct) {
+    redirectWithError("/admin/products", "Продуктът за редакция не беше намерен.");
+  }
+
+  const { data: existingSlug } = await supabase
+    .from("products")
+    .select("id")
+    .eq("slug", input.slug)
+    .neq("id", productId)
+    .maybeSingle();
+
+  if (existingSlug) {
+    redirectWithError(errorPath, "Вече има друг продукт с този slug.");
+  }
+
+  if (input.sku) {
+    const { data: existingSku } = await supabase
+      .from("products")
+      .select("id")
+      .eq("sku", input.sku)
+      .neq("id", productId)
+      .maybeSingle();
+
+    if (existingSku) {
+      redirectWithError(errorPath, "Вече има друг продукт с този SKU.");
+    }
+  }
+
+  await assertCategoryAndSubcategory({
+    supabase,
+    categoryId: input.categoryId,
+    subcategoryId: input.subcategoryId,
+    errorPath,
+  });
+
+  const brandId = await resolveBrandId({
+    supabase,
+    brandIdFromForm: input.brandIdFromForm,
+    newBrandName: input.newBrandName,
+    errorPath,
+  });
+
+  const { error: updateError } = await supabase
+    .from("products")
+    .update({
+      slug: input.slug,
+      sku: input.sku,
+      name: input.name,
+      brand_id: brandId,
+      category_id: input.categoryId,
+      subcategory_id: input.subcategoryId,
+      short_description: input.shortDescription,
+      description: input.description,
+      price_amount: input.priceAmount,
+      currency: input.currency,
+      stock_status: input.stockStatus,
+      badges: input.badges,
+      is_published: input.isPublished,
+      is_featured: input.isFeatured,
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", productId);
+
+  if (updateError) {
+    redirectWithError(errorPath, updateError.message || "Продуктът не можа да бъде обновен.");
+  }
+
+  redirect(`/admin/products?updated=${encodeURIComponent(input.name)}`);
+}
+
+export async function toggleProductPublished(formData: FormData) {
+  const { supabase, user } = await requireAdmin();
+  const productId = getText(formData, "product_id");
+  const nextPublished = getText(formData, "next_published") === "true";
+
+  if (!productId) {
+    redirect("/admin/products?error=missing-product");
+  }
+
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select("id, name")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (productError || !product) {
+    redirect("/admin/products?error=product-not-found");
+  }
+
+  const { error: updateError } = await supabase
+    .from("products")
+    .update({
+      is_published: nextPublished,
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", productId);
+
+  if (updateError) {
+    redirect("/admin/products?error=publish-update-failed");
+  }
+
+  const key = nextPublished ? "published" : "hidden";
+  redirect(`/admin/products?${key}=${encodeURIComponent(product.name)}`);
 }

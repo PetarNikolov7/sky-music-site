@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AdminShell from "@/app/admin/components/AdminShell";
 import { requireAdmin } from "@/app/admin/lib/requireAdmin";
+import { toggleProductPublished } from "./actions";
 
 export const metadata: Metadata = {
   title: "Admin продукти",
@@ -44,8 +45,12 @@ type AdminProductRow = {
 type AdminProductsPageProps = {
   searchParams: Promise<{
     created?: string;
+    updated?: string;
+    published?: string;
+    hidden?: string;
     imageUploaded?: string;
     imageDeleted?: string;
+    error?: string;
   }>;
 };
 
@@ -173,7 +178,7 @@ export default async function AdminProductsPage({
       <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Products v0.3b
+            Admin Product Edit v0.4
           </p>
 
           <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -181,8 +186,8 @@ export default async function AdminProductsPage({
           </h2>
 
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Продуктите вече могат да имат снимки от Supabase Storage. Отворете
-            „Снимки“ към продукт, за да качите основно изображение и галерия.
+            Продуктите вече могат да се създават, редактират, публикуват,
+            скриват и управляват със снимки от Supabase Storage.
           </p>
         </div>
 
@@ -200,6 +205,24 @@ export default async function AdminProductsPage({
         </div>
       )}
 
+      {params.updated && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
+          Продуктът „{params.updated}“ беше обновен успешно.
+        </div>
+      )}
+
+      {params.published && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
+          Продуктът „{params.published}“ беше публикуван.
+        </div>
+      )}
+
+      {params.hidden && (
+        <div className="mt-6 rounded-2xl border border-sky-400/25 bg-sky-400/[0.08] p-5 text-sm font-bold leading-7 text-sky-100">
+          Продуктът „{params.hidden}“ беше скрит.
+        </div>
+      )}
+
       {params.imageUploaded && (
         <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
           Снимката беше качена успешно.
@@ -209,6 +232,12 @@ export default async function AdminProductsPage({
       {params.imageDeleted && (
         <div className="mt-6 rounded-2xl border border-sky-400/25 bg-sky-400/[0.08] p-5 text-sm font-bold leading-7 text-sky-100">
           Снимката беше премахната успешно.
+        </div>
+      )}
+
+      {params.error && (
+        <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm font-bold leading-7 text-red-200">
+          Възникна грешка при промяна на продукта.
         </div>
       )}
 
@@ -275,7 +304,7 @@ export default async function AdminProductsPage({
 
       {!error && products.length > 0 && (
         <section className="mt-8 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.04]">
-          <div className="hidden grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.56fr] gap-5 border-b border-white/10 bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 lg:grid">
+          <div className="hidden grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.72fr] gap-5 border-b border-white/10 bg-white/[0.03] px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-500 lg:grid">
             <p>Снимка</p>
             <p>Продукт</p>
             <p>Категория</p>
@@ -296,7 +325,7 @@ export default async function AdminProductsPage({
               return (
                 <article
                   key={product.id}
-                  className="grid gap-5 px-5 py-5 lg:grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.56fr] lg:items-center lg:px-6"
+                  className="grid gap-5 px-5 py-5 lg:grid-cols-[0.5fr_1.1fr_0.72fr_0.65fr_0.56fr_0.72fr] lg:items-center lg:px-6"
                 >
                   <div>
                     {imageUrl ? (
@@ -344,15 +373,33 @@ export default async function AdminProductsPage({
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       <Link
+                        href={`/admin/products/${product.id}/edit`}
+                        className="rounded-full bg-sky-400 px-4 py-2 text-xs font-black text-black transition hover:bg-sky-300"
+                      >
+                        Редакция
+                      </Link>
+
+                      <Link
                         href={`/admin/products/${product.id}/images`}
                         className="rounded-full bg-white px-4 py-2 text-xs font-black text-black transition hover:bg-slate-200"
                       >
                         Снимки
                       </Link>
 
-                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold text-slate-400">
-                        Редакция скоро
-                      </span>
+                      <form action={toggleProductPublished}>
+                        <input type="hidden" name="product_id" value={product.id} />
+                        <input
+                          type="hidden"
+                          name="next_published"
+                          value={product.is_published ? "false" : "true"}
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black text-white transition hover:bg-white/[0.09]"
+                        >
+                          {product.is_published ? "Скрий" : "Публикувай"}
+                        </button>
+                      </form>
                     </div>
 
                     <p className="mt-3 text-xs text-slate-600">
