@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminShell from "@/app/admin/components/AdminShell";
 import { requireAdmin } from "@/app/admin/lib/requireAdmin";
+import { deleteOrder, updateOrderStatusAndNote } from "../actions";
 
 export const metadata: Metadata = {
   title: "Admin детайл на поръчка",
@@ -15,6 +16,10 @@ export const metadata: Metadata = {
 type OrderDetailPageProps = {
   params: Promise<{
     id: string;
+  }>;
+  searchParams: Promise<{
+    updated?: string;
+    error?: string;
   }>;
 };
 
@@ -64,6 +69,16 @@ type StatusEventRow = {
   created_at: string;
 };
 
+const statusOptions = [
+  { value: "new", label: "Нова" },
+  { value: "contacted", label: "Свързахме се" },
+  { value: "confirmed", label: "Потвърдена" },
+  { value: "preparing", label: "Подготвя се" },
+  { value: "shipped", label: "Изпратена" },
+  { value: "completed", label: "Завършена" },
+  { value: "cancelled", label: "Отказана" },
+];
+
 function formatDate(value: string | null) {
   if (!value) {
     return "—";
@@ -79,15 +94,35 @@ function formatDate(value: string | null) {
 function getStatusLabel(status: string) {
   const labels: Record<string, string> = {
     new: "Нова",
-    contacted: "Контактуван",
+    contacted: "Свързахме се",
     confirmed: "Потвърдена",
-    preparing: "Подготовка",
+    preparing: "Подготвя се",
     shipped: "Изпратена",
     completed: "Завършена",
     cancelled: "Отказана",
   };
 
   return labels[status] ?? status;
+}
+
+function getStatusClass(status: string) {
+  if (status === "new") {
+    return "bg-sky-400/10 text-sky-100 ring-1 ring-sky-400/20";
+  }
+
+  if (["contacted", "confirmed", "preparing", "shipped"].includes(status)) {
+    return "bg-amber-400/10 text-amber-100 ring-1 ring-amber-400/20";
+  }
+
+  if (status === "completed") {
+    return "bg-emerald-400/10 text-emerald-100 ring-1 ring-emerald-400/20";
+  }
+
+  if (status === "cancelled") {
+    return "bg-red-400/10 text-red-100 ring-1 ring-red-400/20";
+  }
+
+  return "bg-white/[0.06] text-slate-300 ring-1 ring-white/10";
 }
 
 function getFulfillmentLabel(value: string) {
@@ -152,8 +187,10 @@ function InfoCard({
 
 export default async function AdminOrderDetailPage({
   params,
+  searchParams,
 }: OrderDetailPageProps) {
   const { id } = await params;
+  const messages = await searchParams;
   const { supabase, user, adminProfile } = await requireAdmin();
 
   const { data: orderData, error: orderError } = await supabase
@@ -196,12 +233,22 @@ export default async function AdminOrderDetailPage({
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-start">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-              Admin Orders v0.8a
+              Admin Orders v0.8b
             </p>
 
-            <h2 className="mt-4 text-4xl font-black leading-tight md:text-5xl">
-              #{order.order_number} · {getStatusLabel(order.status)}
-            </h2>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <h2 className="text-4xl font-black leading-tight md:text-5xl">
+                #{order.order_number}
+              </h2>
+
+              <span
+                className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${getStatusClass(
+                  order.status,
+                )}`}
+              >
+                {getStatusLabel(order.status)}
+              </span>
+            </div>
 
             <p className="mt-4 text-slate-300">
               Получена на {formatDate(order.submitted_at)}
@@ -226,20 +273,125 @@ export default async function AdminOrderDetailPage({
         </div>
       </div>
 
+      {messages.updated && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold text-emerald-200">
+          Поръчката беше обновена успешно.
+        </div>
+      )}
+
+      {messages.error && (
+        <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm font-bold text-red-200">
+          {messages.error}
+        </div>
+      )}
+
+      <section className="mt-8 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="rounded-[2rem] border border-sky-400/20 bg-sky-400/[0.06] p-6 md:p-8">
+          <h3 className="text-2xl font-black">Управление</h3>
+
+          <p className="mt-3 text-sm leading-7 text-slate-300">
+            За нормална работа сменяйте статусите. Изтриването е само за
+            тестови, грешни или спам заявки.
+          </p>
+
+          <form action={updateOrderStatusAndNote} className="mt-6 grid gap-5">
+            <input type="hidden" name="order_id" value={order.id} />
+
+            <div>
+              <label
+                htmlFor="status"
+                className="mb-2 block text-sm font-bold text-slate-200"
+              >
+                Статус
+              </label>
+
+              <select
+                id="status"
+                name="status"
+                defaultValue={order.status}
+                className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
+              >
+                {statusOptions.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="admin-note"
+                className="mb-2 block text-sm font-bold text-slate-200"
+              >
+                Admin бележка
+              </label>
+
+              <textarea
+                id="admin-note"
+                name="admin_note"
+                defaultValue={order.admin_note ?? ""}
+                rows={5}
+                placeholder="Вътрешна бележка само за администратора..."
+                className="w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-white outline-none placeholder:text-slate-600 focus:border-sky-400"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="status-note"
+                className="mb-2 block text-sm font-bold text-slate-200"
+              >
+                Бележка към смяната на статус
+              </label>
+
+              <input
+                id="status-note"
+                name="status_note"
+                placeholder="Напр. Клиентът потвърди по телефона."
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-5 py-4 text-white outline-none placeholder:text-slate-600 focus:border-sky-400"
+              />
+
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                Тази бележка се записва в историята само ако статусът се смени.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              className="cursor-pointer rounded-2xl bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 font-black text-white shadow-xl shadow-blue-950/30 transition hover:brightness-110"
+            >
+              Запази промяната
+            </button>
+          </form>
+        </div>
+
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:p-8">
+          <h3 className="text-2xl font-black">Бърз преглед</h3>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <InfoCard label="Клиент" value={order.customer_name} />
+            <InfoCard label="Телефон" value={order.customer_phone} />
+            <InfoCard label="Имейл" value={order.customer_email} />
+            <InfoCard
+              label="Получаване"
+              value={getFulfillmentLabel(order.fulfillment_method)}
+            />
+            <InfoCard label="Град" value={order.delivery_city} />
+            <InfoCard label="Адрес / офис" value={order.delivery_address} />
+          </div>
+        </div>
+      </section>
+
       <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
         <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:p-8">
-          <h3 className="text-2xl font-black">Клиент</h3>
+          <h3 className="text-2xl font-black">Клиент и доставка</h3>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <InfoCard label="Име" value={order.customer_name} />
             <InfoCard label="Телефон" value={order.customer_phone} />
             <InfoCard label="Имейл" value={order.customer_email} />
             <InfoCard label="Източник" value={order.source} />
-          </div>
-
-          <h3 className="mt-8 text-2xl font-black">Получаване</h3>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <InfoCard
               label="Метод"
               value={getFulfillmentLabel(order.fulfillment_method)}
@@ -249,13 +401,8 @@ export default async function AdminOrderDetailPage({
             <InfoCard label="Адрес" value={order.delivery_address} />
             <InfoCard label="Офис" value={order.courier_office_name} />
             <InfoCard label="Адрес на офис" value={order.courier_office_address} />
-          </div>
-
-          <h3 className="mt-8 text-2xl font-black">Плащане</h3>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <InfoCard
-              label="Метод"
+              label="Плащане"
               value={getPaymentLabel(order.payment_method)}
             />
             <InfoCard
@@ -331,6 +478,50 @@ export default async function AdminOrderDetailPage({
             ))}
           </div>
         )}
+      </section>
+
+      <section className="mt-8 rounded-[2rem] border border-red-400/20 bg-red-400/[0.06] p-6 md:p-8">
+        <h3 className="text-2xl font-black text-red-100">Danger zone</h3>
+
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-red-100/80">
+          Използвайте изтриване само за тестови, грешни или спам заявки.
+          За реална отказана поръчка използвайте статус „Отказана“, за да се
+          запази историята.
+        </p>
+
+        <form action={deleteOrder} className="mt-6 grid gap-4 md:grid-cols-[1fr_auto]">
+          <input type="hidden" name="order_id" value={order.id} />
+          <input
+            type="hidden"
+            name="order_number"
+            value={String(order.order_number)}
+          />
+
+          <div>
+            <label
+              htmlFor="delete-confirmation"
+              className="mb-2 block text-sm font-bold text-red-100"
+            >
+              За изтриване въведете номера на поръчката: {order.order_number}
+            </label>
+
+            <input
+              id="delete-confirmation"
+              name="delete_confirmation"
+              placeholder={String(order.order_number)}
+              className="w-full rounded-2xl border border-red-400/20 bg-black/30 px-5 py-4 text-white outline-none placeholder:text-red-100/30 focus:border-red-300"
+            />
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="submit"
+              className="w-full cursor-pointer rounded-2xl border border-red-300/30 bg-red-500/15 px-6 py-4 font-black text-red-100 transition hover:bg-red-500/25"
+            >
+              Изтрий окончателно
+            </button>
+          </div>
+        </form>
       </section>
     </AdminShell>
   );
