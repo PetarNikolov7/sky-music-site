@@ -4,11 +4,28 @@ import Image from "next/image";
 import ChatInquiryButton from "@/components/ChatInquiryButton";
 import HomeBannerSlideshow from "@/components/HomeBannerSlideshow";
 import SiteHeader from "@/components/SiteHeader";
-import { catalogCategories, products } from "@/data/products";
 
 const phone = "+359884211761";
 const email = "skymusicstorebg@gmail.com";
 const mapsUrl = "https://maps.app.goo.gl/MbzcxmoBwE7t3Y8c6";
+
+type HomeProduct = {
+  id: string;
+  name: string;
+  brand: string;
+  category: string;
+  subcategory: string;
+  price: string;
+  status: string;
+  description: string;
+  image?: string;
+  badges?: string[];
+  featured?: boolean;
+};
+
+type ProductCatalogProps = {
+  products: HomeProduct[];
+};
 
 const brandDescriptions: Record<string, string> = {
   Yamaha: "Музикални инструменти и оборудване",
@@ -109,14 +126,6 @@ const categoryVisuals: Record<
 
 const heroCategoryNames = ["Клавишни", "Струнни", "Озвучаване", "Микрофони"];
 
-const featuredProducts = products
-  .filter((product) => product.featured)
-  .slice(0, 6);
-
-const availableBrands = Array.from(
-  new Set(products.map((product) => product.brand).filter(Boolean)),
-).sort((first, second) => first.localeCompare(second, "bg"));
-
 function makeRequestLink(productName?: string) {
   if (!productName) {
     return "/request";
@@ -160,7 +169,15 @@ function getStatusClass(status: string) {
   return "bg-red-400/10 text-red-300 ring-1 ring-red-400/20";
 }
 
-export default function ProductCatalog() {
+export default function ProductCatalog({ products }: ProductCatalogProps) {
+  const featuredProducts = products
+    .filter((product) => product.featured)
+    .slice(0, 6);
+
+  const availableBrands = Array.from(
+    new Set(products.map((product) => product.brand).filter(Boolean)),
+  ).sort((first, second) => first.localeCompare(second, "bg"));
+
   function openProduct(productId: string) {
     window.location.href = makeProductLink(productId);
   }
