@@ -92,6 +92,25 @@ type RawProduct = {
 
 const BGN_PER_EUR = 1.95583;
 
+const productSelect = `
+  id,
+  slug,
+  sku,
+  name,
+  short_description,
+  description,
+  price_amount,
+  currency,
+  stock_status,
+  is_featured,
+  badges,
+  brands(name),
+  categories(name),
+  subcategories(name),
+  product_images(storage_path, alt_text, sort_order, is_primary),
+  product_specs(label, value, sort_order)
+`;
+
 function getRelationName(value: RelationName) {
   if (Array.isArray(value)) {
     return value[0]?.name ?? "";
@@ -101,10 +120,12 @@ function getRelationName(value: RelationName) {
 }
 
 function formatCurrencyValue(value: number, currency: "EUR" | "BGN") {
-  return new Intl.NumberFormat("bg-BG", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value) + (currency === "EUR" ? " €" : " лв.");
+  return (
+    new Intl.NumberFormat("bg-BG", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value) + (currency === "EUR" ? " €" : " лв.")
+  );
 }
 
 function formatProductPrice(
@@ -271,26 +292,7 @@ export async function getPublishedCatalogData(): Promise<PublishedCatalogData> {
 
     supabase
       .from("products")
-      .select(
-        `
-          id,
-          slug,
-          sku,
-          name,
-          short_description,
-          description,
-          price_amount,
-          currency,
-          stock_status,
-          is_featured,
-          badges,
-          brands(name),
-          categories(name),
-          subcategories(name),
-          product_images(storage_path, alt_text, sort_order, is_primary),
-          product_specs(label, value, sort_order)
-        `,
-      )
+      .select(productSelect)
       .eq("is_published", true)
       .order("updated_at", { ascending: false }),
   ]);
@@ -340,4 +342,25 @@ export async function getPublishedCatalogData(): Promise<PublishedCatalogData> {
     brands: rawBrands.map((brand) => brand.name),
     products,
   };
+}
+
+export async function getPublishedProductBySlug(slug: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(productSelect)
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Product detail query failed: ${error.message}`);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return normalizeProduct(data as unknown as RawProduct);
 }

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ChatInquiryButton from "@/components/ChatInquiryButton";
 import SiteHeader from "@/components/SiteHeader";
-import { products } from "@/data/products";
+import { getPublishedProductBySlug } from "@/lib/catalog/supabaseCatalog";
 
 const phone = "+359884211761";
 
@@ -12,6 +12,8 @@ type ProductPageProps = {
     id: string;
   }>;
 };
+
+export const dynamic = "force-dynamic";
 
 const categoryVisuals: Record<
   string,
@@ -108,17 +110,11 @@ function makeSubcategoryLink(category: string, subcategory: string) {
   )}&subcategory=${encodeURIComponent(subcategory)}`;
 }
 
-export function generateStaticParams() {
-  return products.map((product) => ({
-    id: product.id,
-  }));
-}
-
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
-  const product = products.find((item) => item.id === id);
+  const product = await getPublishedProductBySlug(id);
 
   if (!product) {
     return {
@@ -147,7 +143,7 @@ export async function generateMetadata({
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { id } = await params;
-  const product = products.find((item) => item.id === id);
+  const product = await getPublishedProductBySlug(id);
 
   if (!product) {
     notFound();
@@ -158,7 +154,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     (badge) => badge !== product.status,
   );
   const productSpecs = product.specs ?? [];
-
   const galleryImages =
     product.images && product.images.length > 0
       ? product.images
@@ -368,9 +363,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               <h2 className="text-2xl font-black">Запитване или поръчка</h2>
 
               <p className="mt-3 leading-7 text-slate-300">
-                Ако имате въпроси за този продукт, използвайте бутона
-                „Чат с нас“ или се свържете с нас по телефон. Ако желаете да
-                поръчате директно, използвайте формата за поръчка и доставка.
+                Ако имате въпроси за този продукт, използвайте бутона „Чат с
+                нас“ или се свържете с нас по телефон. Ако желаете да поръчате
+                директно, използвайте формата за поръчка и доставка.
               </p>
             </div>
 
@@ -400,18 +395,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             <div className="mt-10 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6">
               <h2 className="text-2xl font-black">Какво следва?</h2>
 
-              <div className="mt-5 grid gap-4 text-sm leading-7 text-slate-300">
-                <p>
-                  След като изпратите заявка за поръчка, ние ще се свържем с
-                  Вас за потвърждение и уточняване на доставката или вземането
-                  от магазина.
-                </p>
-
-                <p>
-                  При въпроси относно продукта използвайте бутона „Чат с нас“
-                  или се свържете с нас по телефон.
-                </p>
-              </div>
+              <p className="mt-3 leading-7 text-slate-300">
+                След изпращане на заявка наш представител ще се свърже с Вас за
+                потвърждение на наличността, доставката и начина на плащане.
+              </p>
             </div>
           </div>
         </section>
