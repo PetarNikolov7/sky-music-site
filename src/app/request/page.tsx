@@ -30,6 +30,15 @@ type CourierOffice = {
   address: string;
 };
 
+type EcontOfficeMessage = {
+  office?: {
+    id?: string | number;
+    code?: string | number;
+    name?: string;
+    address?: string;
+  };
+};
+
 type OfficesLoadStatus = "idle" | "loading" | "loaded" | "error";
 
 type SubmitStatus = "idle" | "sending" | "success" | "error";
@@ -42,6 +51,7 @@ const deliveryMethods: DeliveryMethod[] = [
 ];
 
 const courierProviders: CourierProvider[] = ["", "Еконт", "Спиди"];
+const econtOfficeLocatorUrl = "https://officelocator.econt.com";
 
 function RequestPageContent() {
   const searchParams = useSearchParams();
@@ -64,6 +74,7 @@ function RequestPageContent() {
   const [officesLoadStatus, setOfficesLoadStatus] =
     useState<OfficesLoadStatus>("idle");
   const [officesLoadError, setOfficesLoadError] = useState("");
+  const [isEcontLocatorOpen, setIsEcontLocatorOpen] = useState(false);
   const [note, setNote] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -81,10 +92,63 @@ function RequestPageContent() {
     setOrderNumber(null);
   }, [productFromUrl]);
 
+  useEffect(() => {
+    function handleEcontOfficeMessage(event: MessageEvent<EcontOfficeMessage>) {
+      if (event.origin !== econtOfficeLocatorUrl) {
+        return;
+      }
+
+      const office = event.data?.office;
+
+      if (!office) {
+        return;
+      }
+
+      const selectedOfficeId = String(office.code ?? office.id ?? "").trim();
+      const selectedOfficeName = String(office.name ?? "").trim();
+      const selectedOfficeAddress = String(office.address ?? "").trim();
+
+      if (!selectedOfficeId || !selectedOfficeName) {
+        return;
+      }
+
+      setCourierProvider("Еконт");
+      setCourierOfficeId(selectedOfficeId);
+      setCourierOfficeName(selectedOfficeName);
+      setCourierOfficeAddress(selectedOfficeAddress);
+      setCourierOffices([]);
+      setOfficesLoadStatus("loaded");
+      setOfficesLoadError("");
+      setIsEcontLocatorOpen(false);
+    }
+
+    window.addEventListener("message", handleEcontOfficeMessage);
+
+    return () => {
+      window.removeEventListener("message", handleEcontOfficeMessage);
+    };
+  }, []);
+
+  function getEcontLocatorSrc() {
+    const shopUrl =
+      typeof window === "undefined"
+        ? "https://sky-music-site-sigma.vercel.app"
+        : window.location.origin;
+
+    const params = new URLSearchParams({
+      shopUrl,
+      city: city.trim() || "Бургас",
+      officeType: "office",
+      lang: "bg",
+    });
+
+    return `${econtOfficeLocatorUrl}?${params.toString()}`;
+  }
+
   const loadCourierOffices = useCallback(async () => {
     if (
       deliveryMethod !== "Доставка до офис на куриер" ||
-      !courierProvider ||
+      courierProvider !== "Спиди" ||
       city.trim().length < 2
     ) {
       setCourierOffices([]);
@@ -600,76 +664,120 @@ function RequestPageContent() {
                           />
                         </div>
 
-                        <div>
-                          <label
-                            htmlFor="courier-office"
-                            className="mb-2 block text-sm font-bold text-slate-300"
-                          >
-                            Офис на куриер{" "}
-                            <span className="ml-1 text-sky-300">*</span>
-                          </label>
+                        {courierProvider === "Еконт" ? (
+                          <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
+                            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                              <div>
+                                <p className="text-sm font-black text-sky-100">
+                                  Избор на офис от картата на Еконт
+                                </p>
 
-                          <select
-                            id="courier-office"
-                            value={courierOfficeId}
-                            onChange={(event) =>
-                              handleCourierOfficeSelect(event.target.value)
-                            }
-                            className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
-                            required
-                            disabled={
-                              isSending ||
-                              !courierProvider ||
-                              city.trim().length < 2 ||
-                              officesLoadStatus === "loading"
-                            }
-                          >
-                            <option value="">
-                              {officesLoadStatus === "loading"
-                                ? "Зареждане на офиси..."
-                                : !courierProvider
-                                  ? "Първо изберете куриер"
-                                  : city.trim().length < 2
-                                    ? "Въведете град"
-                                    : courierOffices.length === 0
-                                      ? "Няма намерени офиси"
-                                      : "Изберете офис"}
-                            </option>
+                                <p className="mt-2 text-sm leading-6 text-slate-300">
+                                  Отворете официалната карта, изберете офис и
+                                  той ще се попълни автоматично в заявката.
+                                </p>
+                              </div>
 
-                            {courierOffices.map((office) => (
-                              <option key={office.id} value={office.office_id}>
-                                {office.name} — {office.address}
-                              </option>
-                            ))}
-                          </select>
-
-                        </div>
-
-                        {officesLoadStatus === "error" && (
-                          <div className="md:col-span-2 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-bold leading-7 text-red-100">
-                            {officesLoadError}
-                          </div>
-                        )}
-
-                        {officesLoadStatus === "loaded" &&
-                          courierProvider &&
-                          city.trim().length >= 2 &&
-                          courierOffices.length === 0 && (
-                            <div className="md:col-span-2 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-7 text-amber-100">
-                              За този куриер и град още няма заредени офиси в
-                              системата. Можете да изберете „Ще уточним
-                              допълнително“ или да се свържете с нас.
+                              <button
+                                type="button"
+                                onClick={() => setIsEcontLocatorOpen(true)}
+                                disabled={isSending}
+                                className="cursor-pointer rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Изберете офис от карта
+                              </button>
                             </div>
-                          )}
 
-                        {courierOfficeName && (
-                          <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100">
-                            <p className="font-black">{courierOfficeName}</p>
-                            <p className="mt-1 text-slate-200">
-                              {courierOfficeAddress}
-                            </p>
+                            {courierOfficeName ? (
+                              <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-sky-100">
+                                <p className="font-black">{courierOfficeName}</p>
+                                <p className="mt-1 text-slate-200">
+                                  {courierOfficeAddress || "Адресът ще бъде записан от Еконт."}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  Код офис: {courierOfficeId}
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="mt-4 text-sm font-bold text-amber-100">
+                                Все още не е избран офис на Еконт.
+                              </p>
+                            )}
                           </div>
+                        ) : (
+                          <>
+                            <div>
+                              <label
+                                htmlFor="courier-office"
+                                className="mb-2 block text-sm font-bold text-slate-300"
+                              >
+                                Офис на куриер{" "}
+                                <span className="ml-1 text-sky-300">*</span>
+                              </label>
+
+                              <select
+                                id="courier-office"
+                                value={courierOfficeId}
+                                onChange={(event) =>
+                                  handleCourierOfficeSelect(event.target.value)
+                                }
+                                className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
+                                required
+                                disabled={
+                                  isSending ||
+                                  courierProvider !== "Спиди" ||
+                                  city.trim().length < 2 ||
+                                  officesLoadStatus === "loading"
+                                }
+                              >
+                                <option value="">
+                                  {officesLoadStatus === "loading"
+                                    ? "Зареждане на офиси..."
+                                    : courierProvider !== "Спиди"
+                                      ? "Изберете Спиди или Еконт"
+                                      : city.trim().length < 2
+                                        ? "Въведете град"
+                                        : courierOffices.length === 0
+                                          ? "Няма намерени офиси"
+                                          : "Изберете офис"}
+                                </option>
+
+                                {courierOffices.map((office) => (
+                                  <option key={office.id} value={office.office_id}>
+                                    {office.name} — {office.address}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {officesLoadStatus === "error" && (
+                              <div className="md:col-span-2 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-bold leading-7 text-red-100">
+                                {officesLoadError}
+                              </div>
+                            )}
+
+                            {officesLoadStatus === "loaded" &&
+                              courierProvider &&
+                              city.trim().length >= 2 &&
+                              courierOffices.length === 0 && (
+                                <div className="md:col-span-2 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-7 text-amber-100">
+                                  За този куриер и град още няма заредени офиси
+                                  в системата. Можете да изберете „Ще уточним
+                                  допълнително“ или да се свържете с нас.
+                                </div>
+                              )}
+
+                            {courierOfficeName && (
+                              <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100">
+                                <p className="font-black">{courierOfficeName}</p>
+                                <p className="mt-1 text-slate-200">
+                                  {courierOfficeAddress}
+                                </p>
+                              </div>
+                            )}
+                          </>
                         )}
+
                       </div>
                     )}
 
@@ -829,6 +937,40 @@ function RequestPageContent() {
           </div>
         </section>
       </section>
+
+        {isEcontLocatorOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 p-4 backdrop-blur-sm md:p-8">
+            <div className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#05070d] shadow-2xl shadow-black">
+              <div className="flex flex-col justify-between gap-4 border-b border-white/10 p-5 md:flex-row md:items-center">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-300">
+                    Еконт
+                  </p>
+
+                  <h3 className="mt-2 text-2xl font-black">
+                    Изберете офис за доставка
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEcontLocatorOpen(false)}
+                  className="cursor-pointer rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white transition hover:bg-white/[0.09]"
+                >
+                  Затвори
+                </button>
+              </div>
+
+              <iframe
+                title="Econt Office Locator"
+                allow="geolocation;"
+                src={getEcontLocatorSrc()}
+                className="h-full min-h-[620px] w-full flex-1 border-0"
+              />
+            </div>
+          </div>
+        )}
+
     </main>
   );
 }
@@ -841,7 +983,8 @@ export default function RequestPage() {
           <section className="mx-auto max-w-7xl px-5 py-10">
             Зареждане...
           </section>
-        </main>
+    
+    </main>
       }
     >
       <RequestPageContent />
