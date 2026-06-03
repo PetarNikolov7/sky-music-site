@@ -2,6 +2,7 @@
 
 import {
   Suspense,
+  useCallback,
   useEffect,
   useState,
   type FormEvent,
@@ -19,6 +20,17 @@ type DeliveryMethod =
   | "Ще уточним допълнително";
 
 type CourierProvider = "" | "Еконт" | "Спиди";
+
+type CourierOffice = {
+  id: string;
+  courier: "econt" | "speedy";
+  city: string;
+  office_id: string;
+  name: string;
+  address: string;
+};
+
+type OfficesLoadStatus = "idle" | "loading" | "loaded" | "error";
 
 type SubmitStatus = "idle" | "sending" | "success" | "error";
 
@@ -45,8 +57,13 @@ function RequestPageContent() {
   const [courierProvider, setCourierProvider] = useState<CourierProvider>("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [courierOfficeId, setCourierOfficeId] = useState("");
   const [courierOfficeName, setCourierOfficeName] = useState("");
   const [courierOfficeAddress, setCourierOfficeAddress] = useState("");
+  const [courierOffices, setCourierOffices] = useState<CourierOffice[]>([]);
+  const [officesLoadStatus, setOfficesLoadStatus] =
+    useState<OfficesLoadStatus>("idle");
+  const [officesLoadError, setOfficesLoadError] = useState("");
   const [note, setNote] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -64,6 +81,96 @@ function RequestPageContent() {
     setOrderNumber(null);
   }, [productFromUrl]);
 
+  const loadCourierOffices = useCallback(async () => {
+    if (
+      deliveryMethod !== "Доставка до офис на куриер" ||
+      !courierProvider ||
+      city.trim().length < 2
+    ) {
+      setCourierOffices([]);
+      setCourierOfficeId("");
+      setCourierOfficeName("");
+      setCourierOfficeAddress("");
+      setOfficesLoadStatus("idle");
+      setOfficesLoadError("");
+      return;
+    }
+
+    setOfficesLoadStatus("loading");
+    setOfficesLoadError("");
+
+    try {
+      const params = new URLSearchParams({
+        courier: courierProvider,
+        city: city.trim(),
+      });
+
+      const response = await fetch(`/api/courier-offices?${params.toString()}`, {
+        cache: "no-store",
+      });
+
+      const result = (await response.json().catch(() => null)) as
+        | { success?: boolean; offices?: CourierOffice[]; error?: string }
+        | null;
+
+      if (!response.ok || !result?.success) {
+        throw new Error(
+          result?.error ??
+            "Офисите не можаха да бъдат заредени. Моля, опитайте отново.",
+        );
+      }
+
+      const loadedOffices = result.offices ?? [];
+
+      setCourierOffices(loadedOffices);
+      setOfficesLoadStatus("loaded");
+
+      if (loadedOffices.length === 1) {
+        const firstOffice = loadedOffices[0];
+
+        setCourierOfficeId(firstOffice.office_id);
+        setCourierOfficeName(firstOffice.name);
+        setCourierOfficeAddress(firstOffice.address);
+      } else {
+        setCourierOfficeId("");
+        setCourierOfficeName("");
+        setCourierOfficeAddress("");
+      }
+    } catch (error) {
+      setCourierOffices([]);
+      setCourierOfficeId("");
+      setCourierOfficeName("");
+      setCourierOfficeAddress("");
+      setOfficesLoadStatus("error");
+      setOfficesLoadError(
+        error instanceof Error
+          ? error.message
+          : "Възникна грешка при зареждане на офисите.",
+      );
+    }
+  }, [city, courierProvider, deliveryMethod]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      loadCourierOffices();
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [loadCourierOffices]);
+
+  function handleCourierOfficeSelect(officeId: string) {
+    setCourierOfficeId(officeId);
+
+    const selectedOffice = courierOffices.find(
+      (office) => office.office_id === officeId,
+    );
+
+    setCourierOfficeName(selectedOffice?.name ?? "");
+    setCourierOfficeAddress(selectedOffice?.address ?? "");
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -71,11 +178,11 @@ function RequestPageContent() {
 
     if (
       deliveryMethod === "Доставка до офис на куриер" &&
-      (!courierProvider || !city.trim() || !courierOfficeName.trim())
+      (!courierProvider || !city.trim() || !courierOfficeId)
     ) {
       setSubmitStatus("error");
       setSubmitError(
-        "Моля, изберете куриер и попълнете град и офис за доставката.",
+        "Моля, изберете куриер, град и офис от списъка за доставката.",
       );
       return;
     }
@@ -108,6 +215,7 @@ function RequestPageContent() {
           courierProvider,
           city,
           address,
+          courierOfficeId,
           courierOfficeName,
           courierOfficeAddress,
           note,
@@ -151,8 +259,12 @@ function RequestPageContent() {
     setCourierProvider("");
     setCity("");
     setAddress("");
+    setCourierOfficeId("");
     setCourierOfficeName("");
     setCourierOfficeAddress("");
+    setCourierOffices([]);
+    setOfficesLoadStatus("idle");
+    setOfficesLoadError("");
     setNote("");
     setWebsite("");
     setOrderNumber(null);
@@ -490,45 +602,74 @@ function RequestPageContent() {
 
                         <div>
                           <label
-                            htmlFor="courier-office-name"
+                            htmlFor="courier-office"
                             className="mb-2 block text-sm font-bold text-slate-300"
                           >
                             Офис на куриер{" "}
                             <span className="ml-1 text-sky-300">*</span>
                           </label>
 
-                          <input
-                            id="courier-office-name"
-                            value={courierOfficeName}
+                          <select
+                            id="courier-office"
+                            value={courierOfficeId}
                             onChange={(event) =>
-                              setCourierOfficeName(event.target.value)
+                              handleCourierOfficeSelect(event.target.value)
                             }
-                            placeholder="Напр. Еконт Бургас Георги Баев"
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
                             required
-                            disabled={isSending}
-                          />
-                        </div>
-
-                        <div className="md:col-span-2">
-                          <label
-                            htmlFor="courier-office-address"
-                            className="mb-2 block text-sm font-bold text-slate-300"
-                          >
-                            Адрес на офис, ако го знаете
-                          </label>
-
-                          <input
-                            id="courier-office-address"
-                            value={courierOfficeAddress}
-                            onChange={(event) =>
-                              setCourierOfficeAddress(event.target.value)
+                            disabled={
+                              isSending ||
+                              !courierProvider ||
+                              city.trim().length < 2 ||
+                              officesLoadStatus === "loading"
                             }
-                            placeholder="Адрес на офиса / уточнение"
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                            disabled={isSending}
-                          />
+                          >
+                            <option value="">
+                              {officesLoadStatus === "loading"
+                                ? "Зареждане на офиси..."
+                                : !courierProvider
+                                  ? "Първо изберете куриер"
+                                  : city.trim().length < 2
+                                    ? "Въведете град"
+                                    : courierOffices.length === 0
+                                      ? "Няма намерени офиси"
+                                      : "Изберете офис"}
+                            </option>
+
+                            {courierOffices.map((office) => (
+                              <option key={office.id} value={office.office_id}>
+                                {office.name} — {office.address}
+                              </option>
+                            ))}
+                          </select>
+
                         </div>
+
+                        {officesLoadStatus === "error" && (
+                          <div className="md:col-span-2 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-bold leading-7 text-red-100">
+                            {officesLoadError}
+                          </div>
+                        )}
+
+                        {officesLoadStatus === "loaded" &&
+                          courierProvider &&
+                          city.trim().length >= 2 &&
+                          courierOffices.length === 0 && (
+                            <div className="md:col-span-2 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-7 text-amber-100">
+                              За този куриер и град още няма заредени офиси в
+                              системата. Можете да изберете „Ще уточним
+                              допълнително“ или да се свържете с нас.
+                            </div>
+                          )}
+
+                        {courierOfficeName && (
+                          <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100">
+                            <p className="font-black">{courierOfficeName}</p>
+                            <p className="mt-1 text-slate-200">
+                              {courierOfficeAddress}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 

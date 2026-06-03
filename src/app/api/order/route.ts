@@ -13,6 +13,7 @@ type OrderPayload = {
   courierProvider?: unknown;
   city?: unknown;
   address?: unknown;
+  courierOfficeId?: unknown;
   courierOfficeName?: unknown;
   courierOfficeAddress?: unknown;
   note?: unknown;
@@ -139,6 +140,7 @@ async function createOrderRecord({
   courierProvider,
   city,
   address,
+  courierOfficeId,
   courierOfficeName,
   courierOfficeAddress,
   note,
@@ -151,6 +153,7 @@ async function createOrderRecord({
   courierProvider: string;
   city: string;
   address: string;
+  courierOfficeId: string;
   courierOfficeName: string;
   courierOfficeAddress: string;
   note: string;
@@ -176,6 +179,7 @@ async function createOrderRecord({
       delivery_city:
         isCourierOffice || isCourierAddress ? city || null : null,
       delivery_address: isCourierAddress ? address || null : null,
+      courier_office_id: isCourierOffice ? courierOfficeId || null : null,
       courier_office_name: isCourierOffice
         ? courierOfficeName || address || null
         : null,
@@ -238,6 +242,7 @@ export async function POST(request: NextRequest) {
     const courierProvider = cleanText(body.courierProvider, 40);
     const city = cleanText(body.city, 120);
     const address = cleanText(body.address, 250);
+    const courierOfficeId = cleanText(body.courierOfficeId, 120);
     const courierOfficeName = cleanText(body.courierOfficeName, 250);
     const courierOfficeAddress = cleanText(body.courierOfficeAddress, 250);
     const note = cleanText(body.note, 1200);
@@ -261,10 +266,10 @@ export async function POST(request: NextRequest) {
 
     if (
       deliveryMethod === "Доставка до офис на куриер" &&
-      (!courierProvider || !city || !courierOfficeName)
+      (!courierProvider || !city || !courierOfficeId || !courierOfficeName)
     ) {
       return NextResponse.json(
-        { error: "Моля, изберете куриер и попълнете град и офис." },
+        { error: "Моля, изберете куриер, град и офис от списъка." },
         { status: 400 },
       );
     }
@@ -288,6 +293,7 @@ export async function POST(request: NextRequest) {
       courierProvider,
       city,
       address,
+      courierOfficeId,
       courierOfficeName,
       courierOfficeAddress,
       note,
