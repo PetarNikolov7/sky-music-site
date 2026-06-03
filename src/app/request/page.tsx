@@ -30,18 +30,129 @@ type CourierOffice = {
   address: string;
 };
 
-type EcontOfficeMessage = {
-  office?: {
-    id?: string | number;
-    code?: string | number;
-    name?: string;
-    address?: string;
-  };
-};
-
 type OfficesLoadStatus = "idle" | "loading" | "loaded" | "error";
 
 type SubmitStatus = "idle" | "sending" | "success" | "error";
+
+type EcontOfficeMessage = {
+  id?: unknown;
+  code?: unknown;
+  officeCode?: unknown;
+  name?: unknown;
+  officeName?: unknown;
+  address?: unknown;
+  fullAddress?: unknown;
+};
+
+function objectToReadableString(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const record = value as Record<string, unknown>;
+  const priorityKeys = [
+    "fullAddress",
+    "addressLine",
+    "address",
+    "text",
+    "label",
+    "name",
+    "city",
+    "quarter",
+    "street",
+    "streetName",
+    "num",
+    "number",
+  ];
+
+  for (const key of priorityKeys) {
+    const nestedValue = record[key];
+
+    if (typeof nestedValue === "string" && nestedValue.trim()) {
+      return nestedValue.trim();
+    }
+
+    if (typeof nestedValue === "number") {
+      return String(nestedValue);
+    }
+  }
+
+  return Object.values(record)
+    .filter((nestedValue) => {
+      return (
+        (typeof nestedValue === "string" && nestedValue.trim()) ||
+        typeof nestedValue === "number"
+      );
+    })
+    .slice(0, 6)
+    .map((nestedValue) => String(nestedValue).trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function safeString(value: unknown) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  if (value && typeof value === "object") {
+    return objectToReadableString(value);
+  }
+
+  return "";
+}
+
+function getEcontOfficePayload(value: unknown): EcontOfficeMessage | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const root = value as Record<string, unknown>;
+  const possibleOffice =
+    root.office ??
+    root.selectedOffice ??
+    root.econtOffice ??
+    root.officeData ??
+    root.data ??
+    root;
+
+  if (!possibleOffice || typeof possibleOffice !== "object") {
+    return null;
+  }
+
+  return possibleOffice as EcontOfficeMessage;
+}
+
+function normalizeEcontOffice(value: unknown) {
+  const office = getEcontOfficePayload(value);
+
+  if (!office) {
+    return null;
+  }
+
+  const officeId =
+    safeString(office.code) ||
+    safeString(office.officeCode) ||
+    safeString(office.id);
+  const officeName =
+    safeString(office.name) || safeString(office.officeName);
+  const officeAddress =
+    safeString(office.address) || safeString(office.fullAddress);
+
+  if (!officeId && !officeName && !officeAddress) {
+    return null;
+  }
+
+  return {
+    officeId,
+    officeName,
+    officeAddress,
+  };
+}
 
 const deliveryMethods: DeliveryMethod[] = [
   "Доставка до офис на куриер",
@@ -93,29 +204,17 @@ function RequestPageContent() {
   }, [productFromUrl]);
 
   useEffect(() => {
-    function handleEcontOfficeMessage(event: MessageEvent<EcontOfficeMessage>) {
-      if (event.origin !== econtOfficeLocatorUrl) {
-        return;
-      }
+    function handleEcontOfficeMessage(event: MessageEvent) {
+      const normalizedOffice = normalizeEcontOffice(event.data);
 
-      const office = event.data?.office;
-
-      if (!office) {
-        return;
-      }
-
-      const selectedOfficeId = String(office.code ?? office.id ?? "").trim();
-      const selectedOfficeName = String(office.name ?? "").trim();
-      const selectedOfficeAddress = String(office.address ?? "").trim();
-
-      if (!selectedOfficeId || !selectedOfficeName) {
+      if (!normalizedOffice) {
         return;
       }
 
       setCourierProvider("Еконт");
-      setCourierOfficeId(selectedOfficeId);
-      setCourierOfficeName(selectedOfficeName);
-      setCourierOfficeAddress(selectedOfficeAddress);
+      setCourierOfficeId(normalizedOffice.officeId);
+      setCourierOfficeName(normalizedOffice.officeName);
+      setCourierOfficeAddress(normalizedOffice.officeAddress);
       setCourierOffices([]);
       setOfficesLoadStatus("loaded");
       setOfficesLoadError("");
@@ -128,6 +227,7 @@ function RequestPageContent() {
       window.removeEventListener("message", handleEcontOfficeMessage);
     };
   }, []);
+
 
   function getEcontLocatorSrc() {
     const shopUrl =
@@ -690,13 +790,21 @@ function RequestPageContent() {
 
                             {courierOfficeName ? (
                               <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-sky-100">
-                                <p className="font-black">{courierOfficeName}</p>
-                                <p className="mt-1 text-slate-200">
-                                  {courierOfficeAddress || "Адресът ще бъде записан от Еконт."}
+                                <p className="font-black">
+                                  {courierOfficeName}
                                 </p>
-                                <p className="mt-1 text-xs text-slate-400">
-                                  Код офис: {courierOfficeId}
-                                </p>
+
+                                {courierOfficeAddress && (
+                                  <p className="mt-1 text-slate-200">
+                                    {courierOfficeAddress}
+                                  </p>
+                                )}
+
+                                {courierOfficeId && (
+                                  <p className="mt-1 text-xs text-slate-400">
+                                    Код офис: {courierOfficeId}
+                                  </p>
+                                )}
                               </div>
                             ) : (
                               <p className="mt-4 text-sm font-bold text-amber-100">
@@ -769,10 +877,21 @@ function RequestPageContent() {
 
                             {courierOfficeName && (
                               <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100">
-                                <p className="font-black">{courierOfficeName}</p>
-                                <p className="mt-1 text-slate-200">
-                                  {courierOfficeAddress}
+                                <p className="font-black">
+                                  {courierOfficeName}
                                 </p>
+
+                                {courierOfficeAddress && (
+                                  <p className="mt-1 text-slate-200">
+                                    {courierOfficeAddress}
+                                  </p>
+                                )}
+
+                                {courierOfficeId && (
+                                  <p className="mt-1 text-xs text-slate-400">
+                                    Код офис: {courierOfficeId}
+                                  </p>
+                                )}
                               </div>
                             )}
                           </>
