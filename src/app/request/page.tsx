@@ -13,17 +13,23 @@ const phone = "+359884211761";
 const email = "skymusicstorebg@gmail.com";
 
 type DeliveryMethod =
+  | "Доставка до офис на куриер"
   | "Доставка до адрес"
   | "Вземане от магазина"
   | "Ще уточним допълнително";
 
+type CourierProvider = "" | "Еконт" | "Спиди";
+
 type SubmitStatus = "idle" | "sending" | "success" | "error";
 
 const deliveryMethods: DeliveryMethod[] = [
+  "Доставка до офис на куриер",
   "Доставка до адрес",
   "Вземане от магазина",
   "Ще уточним допълнително",
 ];
+
+const courierProviders: CourierProvider[] = ["", "Еконт", "Спиди"];
 
 function RequestPageContent() {
   const searchParams = useSearchParams();
@@ -34,10 +40,13 @@ function RequestPageContent() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>(
-    "Доставка до адрес",
+    "Доставка до офис на куриер",
   );
+  const [courierProvider, setCourierProvider] = useState<CourierProvider>("");
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [courierOfficeName, setCourierOfficeName] = useState("");
+  const [courierOfficeAddress, setCourierOfficeAddress] = useState("");
   const [note, setNote] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -61,12 +70,23 @@ function RequestPageContent() {
     setSubmitError("");
 
     if (
-      deliveryMethod === "Доставка до адрес" &&
-      (!city.trim() || !address.trim())
+      deliveryMethod === "Доставка до офис на куриер" &&
+      (!courierProvider || !city.trim() || !courierOfficeName.trim())
     ) {
       setSubmitStatus("error");
       setSubmitError(
-        "Моля, попълнете град и адрес или офис за доставката.",
+        "Моля, изберете куриер и попълнете град и офис за доставката.",
+      );
+      return;
+    }
+
+    if (
+      deliveryMethod === "Доставка до адрес" &&
+      (!courierProvider || !city.trim() || !address.trim())
+    ) {
+      setSubmitStatus("error");
+      setSubmitError(
+        "Моля, изберете куриер и попълнете град и адрес за доставката.",
       );
       return;
     }
@@ -85,8 +105,11 @@ function RequestPageContent() {
           phone: customerPhone,
           email: customerEmail,
           deliveryMethod,
+          courierProvider,
           city,
           address,
+          courierOfficeName,
+          courierOfficeAddress,
           note,
           website,
         }),
@@ -124,9 +147,12 @@ function RequestPageContent() {
     setName("");
     setCustomerPhone("");
     setCustomerEmail("");
-    setDeliveryMethod("Доставка до адрес");
+    setDeliveryMethod("Доставка до офис на куриер");
+    setCourierProvider("");
     setCity("");
     setAddress("");
+    setCourierOfficeName("");
+    setCourierOfficeAddress("");
     setNote("");
     setWebsite("");
     setOrderNumber(null);
@@ -406,53 +432,149 @@ function RequestPageContent() {
                       </select>
                     </div>
 
-                    <div className="grid gap-5 md:grid-cols-2">
+                    {(deliveryMethod === "Доставка до офис на куриер" ||
+                      deliveryMethod === "Доставка до адрес") && (
                       <div>
                         <label
-                          htmlFor="city"
+                          htmlFor="courier-provider"
                           className="mb-2 block text-sm font-bold text-slate-300"
                         >
-                          Град
-                          {deliveryMethod === "Доставка до адрес" && (
-                            <span className="ml-1 text-sky-300">*</span>
-                          )}
+                          Куриер <span className="ml-1 text-sky-300">*</span>
                         </label>
 
-                        <input
-                          id="city"
-                          value={city}
-                          onChange={(event) => setCity(event.target.value)}
-                          placeholder="Град"
-                          autoComplete="address-level2"
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                          required={deliveryMethod === "Доставка до адрес"}
+                        <select
+                          id="courier-provider"
+                          value={courierProvider}
+                          onChange={(event) =>
+                            setCourierProvider(
+                              event.target.value as CourierProvider,
+                            )
+                          }
+                          className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
+                          required={
+                            deliveryMethod === "Доставка до офис на куриер" ||
+                            deliveryMethod === "Доставка до адрес"
+                          }
                           disabled={isSending}
-                        />
-                      </div>
-
-                      <div>
-                        <label
-                          htmlFor="address"
-                          className="mb-2 block text-sm font-bold text-slate-300"
                         >
-                          Адрес или офис за доставка
-                          {deliveryMethod === "Доставка до адрес" && (
-                            <span className="ml-1 text-sky-300">*</span>
-                          )}
-                        </label>
-
-                        <input
-                          id="address"
-                          value={address}
-                          onChange={(event) => setAddress(event.target.value)}
-                          placeholder="Адрес / офис на куриер"
-                          autoComplete="street-address"
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
-                          required={deliveryMethod === "Доставка до адрес"}
-                          disabled={isSending}
-                        />
+                          {courierProviders.map((provider) => (
+                            <option key={provider || "empty"} value={provider}>
+                              {provider || "Изберете куриер"}
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    </div>
+                    )}
+
+                    {deliveryMethod === "Доставка до офис на куриер" && (
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor="city"
+                            className="mb-2 block text-sm font-bold text-slate-300"
+                          >
+                            Град <span className="ml-1 text-sky-300">*</span>
+                          </label>
+
+                          <input
+                            id="city"
+                            value={city}
+                            onChange={(event) => setCity(event.target.value)}
+                            placeholder="Град"
+                            autoComplete="address-level2"
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            required
+                            disabled={isSending}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="courier-office-name"
+                            className="mb-2 block text-sm font-bold text-slate-300"
+                          >
+                            Офис на куриер{" "}
+                            <span className="ml-1 text-sky-300">*</span>
+                          </label>
+
+                          <input
+                            id="courier-office-name"
+                            value={courierOfficeName}
+                            onChange={(event) =>
+                              setCourierOfficeName(event.target.value)
+                            }
+                            placeholder="Напр. Еконт Бургас Георги Баев"
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            required
+                            disabled={isSending}
+                          />
+                        </div>
+
+                        <div className="md:col-span-2">
+                          <label
+                            htmlFor="courier-office-address"
+                            className="mb-2 block text-sm font-bold text-slate-300"
+                          >
+                            Адрес на офис, ако го знаете
+                          </label>
+
+                          <input
+                            id="courier-office-address"
+                            value={courierOfficeAddress}
+                            onChange={(event) =>
+                              setCourierOfficeAddress(event.target.value)
+                            }
+                            placeholder="Адрес на офиса / уточнение"
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            disabled={isSending}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {deliveryMethod === "Доставка до адрес" && (
+                      <div className="grid gap-5 md:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor="city"
+                            className="mb-2 block text-sm font-bold text-slate-300"
+                          >
+                            Град <span className="ml-1 text-sky-300">*</span>
+                          </label>
+
+                          <input
+                            id="city"
+                            value={city}
+                            onChange={(event) => setCity(event.target.value)}
+                            placeholder="Град"
+                            autoComplete="address-level2"
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            required
+                            disabled={isSending}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="address"
+                            className="mb-2 block text-sm font-bold text-slate-300"
+                          >
+                            Адрес <span className="ml-1 text-sky-300">*</span>
+                          </label>
+
+                          <input
+                            id="address"
+                            value={address}
+                            onChange={(event) => setAddress(event.target.value)}
+                            placeholder="Адрес за доставка"
+                            autoComplete="street-address"
+                            className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white outline-none placeholder:text-slate-500 focus:border-sky-400"
+                            required
+                            disabled={isSending}
+                          />
+                        </div>
+                      </div>
+                    )}
 
                     <div>
                       <label

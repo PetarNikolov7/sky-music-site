@@ -10,8 +10,11 @@ type OrderPayload = {
   phone?: unknown;
   email?: unknown;
   deliveryMethod?: unknown;
+  courierProvider?: unknown;
   city?: unknown;
   address?: unknown;
+  courierOfficeName?: unknown;
+  courierOfficeAddress?: unknown;
   note?: unknown;
   website?: unknown;
 };
@@ -22,6 +25,8 @@ type FulfillmentMethod =
   | "courier_locker"
   | "courier_address"
   | "to_confirm";
+
+type CourierProvider = "econt" | "speedy" | null;
 
 type ProductLookup = {
   id: string;
@@ -68,11 +73,27 @@ function mapFulfillmentMethod(deliveryMethod: string): FulfillmentMethod {
     return "pickup_store";
   }
 
+  if (deliveryMethod === "Доставка до офис на куриер") {
+    return "courier_office";
+  }
+
   if (deliveryMethod === "Доставка до адрес") {
     return "courier_address";
   }
 
   return "to_confirm";
+}
+
+function mapCourierProvider(courierProvider: string): CourierProvider {
+  if (courierProvider === "Еконт") {
+    return "econt";
+  }
+
+  if (courierProvider === "Спиди") {
+    return "speedy";
+  }
+
+  return null;
 }
 
 function createServiceRoleClient() {
@@ -115,8 +136,11 @@ async function createOrderRecord({
   phone,
   email,
   deliveryMethod,
+  courierProvider,
   city,
   address,
+  courierOfficeName,
+  courierOfficeAddress,
   note,
 }: {
   product: string;
@@ -124,13 +148,20 @@ async function createOrderRecord({
   phone: string;
   email: string;
   deliveryMethod: string;
+  courierProvider: string;
   city: string;
   address: string;
+  courierOfficeName: string;
+  courierOfficeAddress: string;
   note: string;
 }) {
   const supabase = createServiceRoleClient();
   const fulfillmentMethod = mapFulfillmentMethod(deliveryMethod);
+  const mappedCourier = mapCourierProvider(courierProvider);
   const productRecord = await findProductByName(product);
+
+  const isCourierOffice = fulfillmentMethod === "courier_office";
+  const isCourierAddress = fulfillmentMethod === "courier_address";
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -140,9 +171,17 @@ async function createOrderRecord({
       customer_phone: phone,
       customer_email: email || null,
       fulfillment_method: fulfillmentMethod,
-      courier: null,
-      delivery_city: city || null,
-      delivery_address: address || null,
+      courier:
+        isCourierOffice || isCourierAddress ? mappedCourier : null,
+      delivery_city:
+        isCourierOffice || isCourierAddress ? city || null : null,
+      delivery_address: isCourierAddress ? address || null : null,
+      courier_office_name: isCourierOffice
+        ? courierOfficeName || address || null
+        : null,
+      courier_office_address: isCourierOffice
+        ? courierOfficeAddress || null
+        : null,
       payment_method: "to_confirm",
       customer_note: note || null,
       terms_version: "terms-2026-05-28",
@@ -196,8 +235,11 @@ export async function POST(request: NextRequest) {
     const phone = cleanText(body.phone, 60);
     const email = cleanText(body.email, 150);
     const deliveryMethod = cleanText(body.deliveryMethod, 120);
+    const courierProvider = cleanText(body.courierProvider, 40);
     const city = cleanText(body.city, 120);
     const address = cleanText(body.address, 250);
+    const courierOfficeName = cleanText(body.courierOfficeName, 250);
+    const courierOfficeAddress = cleanText(body.courierOfficeAddress, 250);
     const note = cleanText(body.note, 1200);
 
     if (!product || !name || !phone || !deliveryMethod) {
@@ -217,14 +259,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      deliveryMethod === "Доставка до офис на куриер" &&
+      (!courierProvider || !city || !courierOfficeName)
+    ) {
+      return NextResponse.json(
+        { error: "Моля, изберете куриер и попълнете град и офис." },
+        { status: 400 },
+      );
+    }
+
+    if (
+      deliveryMethod === "Доставка до адрес" &&
+      (!courierProvider || !city || !address)
+    ) {
+      return NextResponse.json(
+        { error: "Моля, изберете куриер и попълнете град и адрес." },
+        { status: 400 },
+      );
+    }
+
     const orderRecord = await createOrderRecord({
       product,
       name,
       phone,
       email,
       deliveryMethod,
+      courierProvider,
       city,
       address,
+      courierOfficeName,
+      courierOfficeAddress,
       note,
     });
 
@@ -248,8 +313,11 @@ export async function POST(request: NextRequest) {
       "",
       "ПОЛУЧАВАНЕ",
       `Начин: ${deliveryMethod}`,
+      `Куриер: ${textValue(courierProvider)}`,
       `Град: ${textValue(city)}`,
-      `Адрес / офис за доставка: ${textValue(address)}`,
+      `Адрес за доставка: ${textValue(address)}`,
+      `Офис: ${textValue(courierOfficeName)}`,
+      `Адрес на офис: ${textValue(courierOfficeAddress)}`,
       "",
       "БЕЛЕЖКА",
       textValue(note),
@@ -283,8 +351,11 @@ export async function POST(request: NextRequest) {
             <h2 style="margin:0 0 14px;font-size:17px;">Получаване</h2>
             <table style="width:100%;border-collapse:collapse;margin-bottom:28px;font-size:14px;">
               <tr><td style="padding:8px 0;color:#64748b;width:165px;">Начин</td><td style="padding:8px 0;font-weight:700;">${htmlValue(deliveryMethod)}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;">Куриер</td><td style="padding:8px 0;font-weight:700;">${htmlValue(courierProvider)}</td></tr>
               <tr><td style="padding:8px 0;color:#64748b;">Град</td><td style="padding:8px 0;font-weight:700;">${htmlValue(city)}</td></tr>
-              <tr><td style="padding:8px 0;color:#64748b;">Адрес / офис</td><td style="padding:8px 0;font-weight:700;">${htmlValue(address)}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;">Адрес</td><td style="padding:8px 0;font-weight:700;">${htmlValue(address)}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;">Офис</td><td style="padding:8px 0;font-weight:700;">${htmlValue(courierOfficeName)}</td></tr>
+              <tr><td style="padding:8px 0;color:#64748b;">Адрес на офис</td><td style="padding:8px 0;font-weight:700;">${htmlValue(courierOfficeAddress)}</td></tr>
             </table>
 
             <h2 style="margin:0 0 12px;font-size:17px;">Бележка</h2>
