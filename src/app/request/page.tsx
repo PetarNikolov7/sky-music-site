@@ -186,6 +186,7 @@ function RequestPageContent() {
     useState<OfficesLoadStatus>("idle");
   const [officesLoadError, setOfficesLoadError] = useState("");
   const [isEcontLocatorOpen, setIsEcontLocatorOpen] = useState(false);
+  const [econtLocatorRefreshKey, setEcontLocatorRefreshKey] = useState(0);
   const [note, setNote] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -333,6 +334,10 @@ function RequestPageContent() {
 
     setCourierOfficeName(selectedOffice?.name ?? "");
     setCourierOfficeAddress(selectedOffice?.address ?? "");
+  }
+
+  function refreshEcontLocator() {
+    setEcontLocatorRefreshKey((currentKey) => currentKey + 1);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1058,33 +1063,52 @@ function RequestPageContent() {
       </section>
 
         {isEcontLocatorOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 p-4 backdrop-blur-sm md:p-8">
-            <div className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[#05070d] shadow-2xl shadow-black">
-              <div className="flex flex-col justify-between gap-4 border-b border-white/10 p-5 md:flex-row md:items-center">
+          <div className="fixed inset-0 z-[9999] flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#05070d] text-white">
+            <div className="shrink-0 border-b border-white/10 bg-[#05070d] p-4">
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-300">
                     Еконт
                   </p>
-
-                  <h3 className="mt-2 text-2xl font-black">
+                  <h3 className="mt-2 text-2xl font-black md:text-3xl">
                     Изберете офис за доставка
                   </h3>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsEcontLocatorOpen(false)}
-                  className="cursor-pointer rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white transition hover:bg-white/[0.09]"
-                >
-                  Затвори
-                </button>
-              </div>
+                <div className="grid grid-cols-2 gap-3 md:flex md:items-center">
+                  <button
+                    type="button"
+                    onClick={refreshEcontLocator}
+                    className="rounded-full border border-sky-400/25 bg-sky-400/10 px-5 py-3 text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+                  >
+                    Покажи списъка отново
+                  </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setIsEcontLocatorOpen(false)}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white transition hover:bg-white/[0.09]"
+                  >
+                    Затвори
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 border-b border-white/10 bg-sky-400/[0.06] px-4 py-3 text-xs leading-5 text-sky-100">
+              <div className="mx-auto max-w-6xl">
+                Ако списъкът с офисите се скрие при плъзгане надолу на телефон,
+                натиснете „Покажи списъка отново“.
+              </div>
+            </div>
+
+            <div className="relative min-h-0 flex-1 bg-white">
               <iframe
-                title="Econt Office Locator"
-                allow="geolocation;"
+                key={econtLocatorRefreshKey}
                 src={getEcontLocatorSrc()}
-                className="h-full min-h-[620px] w-full flex-1 border-0"
+                title="Избор на офис на Еконт"
+                className="absolute inset-0 h-full w-full border-0 bg-white"
+                allow="geolocation"
               />
             </div>
           </div>
