@@ -178,7 +178,7 @@ export default async function AdminProductsPage({
       <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Product Edit v0.4
+            Admin Product Workflow v1.0b
           </p>
 
           <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -186,17 +186,27 @@ export default async function AdminProductsPage({
           </h2>
 
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Продуктите вече могат да се създават, редактират, публикуват,
-            скриват и управляват със снимки от Supabase Storage.
+            Продуктите могат да се създават, редактират, публикуват,
+            скриват и проверяват с readiness checklist преди публично
+            показване.
           </p>
         </div>
 
-        <Link
-          href="/admin/products/new"
-          className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-950/30 transition hover:brightness-110"
-        >
-          Добави продукт
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row md:items-center">
+          <Link
+            href="/admin/products/readiness"
+            className="rounded-full border border-sky-400/25 bg-sky-400/10 px-6 py-4 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+          >
+            Проверка готовност
+          </Link>
+
+          <Link
+            href="/admin/products/new"
+            className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-950/30 transition hover:brightness-110"
+          >
+            Добави продукт
+          </Link>
+        </div>
       </div>
 
       {params.created && (
@@ -293,12 +303,21 @@ export default async function AdminProductsPage({
             да качвате снимки към него.
           </p>
 
-          <Link
-            href="/admin/products/new"
-            className="mt-7 inline-flex rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
-          >
-            Добави първия продукт
-          </Link>
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link
+              href="/admin/products/new"
+              className="inline-flex rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200"
+            >
+              Добави първия продукт
+            </Link>
+
+            <Link
+              href="/admin/products/readiness"
+              className="inline-flex rounded-full border border-sky-400/25 bg-sky-400/10 px-6 py-3 text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+            >
+              Проверка готовност
+            </Link>
+          </div>
         </section>
       )}
 
