@@ -44,6 +44,20 @@ type EcontOfficeMessage = {
   fullAddress?: unknown;
 };
 
+type SpeedyOfficeMessage = {
+  id?: unknown;
+  officeId?: unknown;
+  officeCode?: unknown;
+  code?: unknown;
+  name?: unknown;
+  officeName?: unknown;
+  address?: unknown;
+  fullAddress?: unknown;
+  localAddressString?: unknown;
+  siteName?: unknown;
+  site?: unknown;
+};
+
 function objectToReadableString(value: unknown) {
   if (!value || typeof value !== "object") {
     return "";
@@ -154,6 +168,72 @@ function normalizeEcontOffice(value: unknown) {
   };
 }
 
+function parseMessagePayload(value: unknown) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+function getSpeedyOfficePayload(value: unknown): SpeedyOfficeMessage | null {
+  const parsedValue = parseMessagePayload(value);
+
+  if (!parsedValue || typeof parsedValue !== "object") {
+    return null;
+  }
+
+  const root = parsedValue as Record<string, unknown>;
+  const possibleOffice =
+    root.returnedOfficeJsonObject ??
+    root.office ??
+    root.selectedOffice ??
+    root.speedyOffice ??
+    root.officeData ??
+    root.data ??
+    root;
+
+  if (!possibleOffice || typeof possibleOffice !== "object") {
+    return null;
+  }
+
+  return possibleOffice as SpeedyOfficeMessage;
+}
+
+function normalizeSpeedyOffice(value: unknown) {
+  const office = getSpeedyOfficePayload(value);
+
+  if (!office) {
+    return null;
+  }
+
+  const officeId =
+    safeString(office.officeId) ||
+    safeString(office.officeCode) ||
+    safeString(office.code) ||
+    safeString(office.id);
+  const officeName =
+    safeString(office.name) || safeString(office.officeName);
+  const officeAddress =
+    safeString(office.fullAddress) ||
+    safeString(office.address) ||
+    safeString(office.localAddressString);
+
+  if (!officeId && !officeName && !officeAddress) {
+    return null;
+  }
+
+  return {
+    officeId,
+    officeName,
+    officeAddress,
+  };
+}
+
 const deliveryMethods: DeliveryMethod[] = [
   "Доставка до офис на куриер",
   "Доставка до адрес",
@@ -163,6 +243,8 @@ const deliveryMethods: DeliveryMethod[] = [
 
 const courierProviders: CourierProvider[] = ["", "Еконт", "Спиди"];
 const econtOfficeLocatorUrl = "https://officelocator.econt.com";
+const speedyOfficeLocatorUrl =
+  "https://services.speedy.bg/office_locator_widget_v3/office_locator.php";
 
 function RequestPageContent() {
   const searchParams = useSearchParams();
@@ -187,6 +269,8 @@ function RequestPageContent() {
   const [officesLoadError, setOfficesLoadError] = useState("");
   const [isEcontLocatorOpen, setIsEcontLocatorOpen] = useState(false);
   const [econtLocatorRefreshKey, setEcontLocatorRefreshKey] = useState(0);
+  const [isSpeedyLocatorOpen, setIsSpeedyLocatorOpen] = useState(false);
+  const [speedyLocatorRefreshKey, setSpeedyLocatorRefreshKey] = useState(0);
   const [note, setNote] = useState("");
   const [website, setWebsite] = useState("");
 
@@ -205,6 +289,10 @@ function RequestPageContent() {
   }, [productFromUrl]);
 
   useEffect(() => {
+    if (!isEcontLocatorOpen) {
+      return;
+    }
+
     function handleEcontOfficeMessage(event: MessageEvent) {
       const normalizedOffice = normalizeEcontOffice(event.data);
 
@@ -227,7 +315,36 @@ function RequestPageContent() {
     return () => {
       window.removeEventListener("message", handleEcontOfficeMessage);
     };
-  }, []);
+  }, [isEcontLocatorOpen]);
+
+  useEffect(() => {
+    if (!isSpeedyLocatorOpen) {
+      return;
+    }
+
+    function handleSpeedyOfficeMessage(event: MessageEvent) {
+      const normalizedOffice = normalizeSpeedyOffice(event.data);
+
+      if (!normalizedOffice) {
+        return;
+      }
+
+      setCourierProvider("Спиди");
+      setCourierOfficeId(normalizedOffice.officeId);
+      setCourierOfficeName(normalizedOffice.officeName);
+      setCourierOfficeAddress(normalizedOffice.officeAddress);
+      setCourierOffices([]);
+      setOfficesLoadStatus("loaded");
+      setOfficesLoadError("");
+      setIsSpeedyLocatorOpen(false);
+    }
+
+    window.addEventListener("message", handleSpeedyOfficeMessage);
+
+    return () => {
+      window.removeEventListener("message", handleSpeedyOfficeMessage);
+    };
+  }, [isSpeedyLocatorOpen]);
 
 
   function getEcontLocatorSrc() {
@@ -244,6 +361,17 @@ function RequestPageContent() {
     });
 
     return `${econtOfficeLocatorUrl}?${params.toString()}`;
+  }
+
+  function getSpeedyLocatorSrc() {
+    const params = new URLSearchParams({
+      lang: "bg",
+      showOfficesList: "1",
+      selectOfficeButtonCaption: "Изберете този офис",
+      city: city.trim() || "Бургас",
+    });
+
+    return `${speedyOfficeLocatorUrl}?${params.toString()}`;
   }
 
   const loadCourierOffices = useCallback(async () => {
@@ -338,6 +466,10 @@ function RequestPageContent() {
 
   function refreshEcontLocator() {
     setEcontLocatorRefreshKey((currentKey) => currentKey + 1);
+  }
+
+  function refreshSpeedyLocator() {
+    setSpeedyLocatorRefreshKey((currentKey) => currentKey + 1);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -817,71 +949,32 @@ function RequestPageContent() {
                               </p>
                             )}
                           </div>
-                        ) : (
-                          <>
-                            <div>
-                              <label
-                                htmlFor="courier-office"
-                                className="mb-2 block text-sm font-bold text-slate-300"
-                              >
-                                Офис на куриер{" "}
-                                <span className="ml-1 text-sky-300">*</span>
-                              </label>
+                        ) : courierProvider === "Спиди" ? (
+                          <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-5">
+                            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                              <div>
+                                <p className="text-sm font-black text-sky-100">
+                                  Избор на офис от картата на Спиди
+                                </p>
 
-                              <select
-                                id="courier-office"
-                                value={courierOfficeId}
-                                onChange={(event) =>
-                                  handleCourierOfficeSelect(event.target.value)
-                                }
-                                className="w-full cursor-pointer rounded-2xl border border-white/10 bg-[#111827] px-5 py-4 text-white outline-none focus:border-sky-400"
-                                required
-                                disabled={
-                                  isSending ||
-                                  courierProvider !== "Спиди" ||
-                                  city.trim().length < 2 ||
-                                  officesLoadStatus === "loading"
-                                }
-                              >
-                                <option value="">
-                                  {officesLoadStatus === "loading"
-                                    ? "Зареждане на офиси..."
-                                    : courierProvider !== "Спиди"
-                                      ? "Изберете Спиди или Еконт"
-                                      : city.trim().length < 2
-                                        ? "Въведете град"
-                                        : courierOffices.length === 0
-                                          ? "Няма намерени офиси"
-                                          : "Изберете офис"}
-                                </option>
+                                <p className="mt-2 text-sm leading-6 text-slate-300">
+                                  Отворете официалната карта на Спиди, изберете
+                                  офис и той ще се попълни автоматично в заявката.
+                                </p>
+                              </div>
 
-                                {courierOffices.map((office) => (
-                                  <option key={office.id} value={office.office_id}>
-                                    {office.name} — {office.address}
-                                  </option>
-                                ))}
-                              </select>
+                              <button
+                                type="button"
+                                onClick={() => setIsSpeedyLocatorOpen(true)}
+                                disabled={isSending}
+                                className="cursor-pointer rounded-full bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Изберете офис от карта
+                              </button>
                             </div>
 
-                            {officesLoadStatus === "error" && (
-                              <div className="md:col-span-2 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm font-bold leading-7 text-red-100">
-                                {officesLoadError}
-                              </div>
-                            )}
-
-                            {officesLoadStatus === "loaded" &&
-                              courierProvider &&
-                              city.trim().length >= 2 &&
-                              courierOffices.length === 0 && (
-                                <div className="md:col-span-2 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4 text-sm leading-7 text-amber-100">
-                                  За този куриер и град още няма заредени офиси
-                                  в системата. Можете да изберете „Ще уточним
-                                  допълнително“ или да се свържете с нас.
-                                </div>
-                              )}
-
-                            {courierOfficeName && (
-                              <div className="md:col-span-2 rounded-2xl border border-sky-400/20 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100">
+                            {courierOfficeName ? (
+                              <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-7 text-sky-100">
                                 <p className="font-black">
                                   {courierOfficeName}
                                 </p>
@@ -898,10 +991,17 @@ function RequestPageContent() {
                                   </p>
                                 )}
                               </div>
+                            ) : (
+                              <p className="mt-4 text-sm font-bold text-amber-100">
+                                Все още не е избран офис на Спиди.
+                              </p>
                             )}
-                          </>
+                          </div>
+                        ) : (
+                          <div className="md:col-span-2 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-5 text-sm font-bold leading-7 text-amber-100">
+                            Моля, изберете Еконт или Спиди.
+                          </div>
                         )}
-
                       </div>
                     )}
 
@@ -1107,6 +1207,58 @@ function RequestPageContent() {
                 key={econtLocatorRefreshKey}
                 src={getEcontLocatorSrc()}
                 title="Избор на офис на Еконт"
+                className="absolute inset-0 h-full w-full border-0 bg-white"
+                allow="geolocation"
+              />
+            </div>
+          </div>
+        )}
+
+        {isSpeedyLocatorOpen && (
+          <div className="fixed inset-0 z-[9999] flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#05070d] text-white">
+            <div className="shrink-0 border-b border-white/10 bg-[#05070d] p-4">
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-300">
+                    Спиди
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black md:text-3xl">
+                    Изберете офис за доставка
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 md:flex md:items-center">
+                  <button
+                    type="button"
+                    onClick={refreshSpeedyLocator}
+                    className="rounded-full border border-sky-400/25 bg-sky-400/10 px-5 py-3 text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
+                  >
+                    Покажи списъка отново
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSpeedyLocatorOpen(false)}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-black text-white transition hover:bg-white/[0.09]"
+                  >
+                    Затвори
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="shrink-0 border-b border-white/10 bg-sky-400/[0.06] px-4 py-3 text-xs leading-5 text-sky-100">
+              <div className="mx-auto max-w-6xl">
+                Ако списъкът с офисите се скрие при плъзгане надолу на телефон,
+                натиснете „Покажи списъка отново“.
+              </div>
+            </div>
+
+            <div className="relative min-h-0 flex-1 bg-white">
+              <iframe
+                key={speedyLocatorRefreshKey}
+                src={getSpeedyLocatorSrc()}
+                title="Избор на офис на Спиди"
                 className="absolute inset-0 h-full w-full border-0 bg-white"
                 allow="geolocation"
               />
