@@ -178,7 +178,7 @@ export default async function AdminProductsPage({
       <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Product Workflow v1.0b
+            Admin Product Workflow v1.0d
           </p>
 
           <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -410,6 +410,13 @@ export default async function AdminProductsPage({
                         className="rounded-full border border-sky-400/25 bg-sky-400/10 px-4 py-2 text-xs font-black text-sky-100 transition hover:bg-sky-400/20"
                       >
                         Характеристики
+                      </Link>
+
+                      <Link
+                        href={`/admin/products/${product.id}/next`}
+                        className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-xs font-black text-emerald-100 transition hover:bg-emerald-400/20"
+                      >
+                        Следващи стъпки
                       </Link>
 
                       <form action={toggleProductPublished}>
