@@ -488,13 +488,16 @@ export default function ProductForm({
                 name="is_published"
                 type="checkbox"
                 defaultChecked={defaults.isPublished}
+                disabled={!isEditMode}
                 className="mt-1 h-5 w-5 accent-sky-400"
               />
               <span>
                 <span className="block font-black text-white">Публикуван</span>
                 <span className="mt-1 block text-sm leading-6 text-slate-400">
-                  Продуктът ще бъде видим за клиентите, когато публичният сайт
-                  започне да чете от Supabase.
+                  Публикуването се разрешава само ако са попълнени всички
+                  задължителни данни и има основна снимка и характеристики.
+                  {!isEditMode &&
+                    " Първо създайте продукта, после добавете съдържанието му."}
                 </span>
               </span>
             </label>

@@ -178,7 +178,7 @@ export default async function AdminProductsPage({
       <div className="flex flex-col justify-between gap-5 rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 via-blue-950/30 to-black p-7 md:flex-row md:items-end md:p-9">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-300">
-            Admin Product Workflow v1.0f
+            Admin Product Workflow v1.0g
           </p>
 
           <h2 className="mt-4 text-4xl font-black leading-tight">
@@ -247,7 +247,7 @@ export default async function AdminProductsPage({
 
       {params.error && (
         <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm font-bold leading-7 text-red-200">
-          Възникна грешка при промяна на продукта.
+          {params.error}
         </div>
       )}
 

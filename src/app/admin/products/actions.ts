@@ -82,6 +82,80 @@ function parseBadges(value: string) {
     .slice(0, 12);
 }
 
+type PublishReadinessInput = {
+  name: string | null;
+  slug: string | null;
+  priceAmount: number | string | null;
+  brandId: string | null;
+  categoryId: string | null;
+  subcategoryId: string | null;
+  hasPrimaryImage: boolean;
+  hasSpecs: boolean;
+};
+
+function getPublishReadinessMissingItems(input: PublishReadinessInput) {
+  const missingItems: string[] = [];
+
+  if (!input.name?.trim()) missingItems.push("име");
+  if (!input.slug?.trim()) missingItems.push("slug");
+  if (input.priceAmount === null || input.priceAmount === undefined) {
+    missingItems.push("цена");
+  }
+  if (!input.brandId) missingItems.push("марка");
+  if (!input.categoryId) missingItems.push("категория");
+  if (!input.subcategoryId) missingItems.push("подкатегория");
+  if (!input.hasPrimaryImage) missingItems.push("основна снимка");
+  if (!input.hasSpecs) missingItems.push("характеристики");
+
+  return missingItems;
+}
+
+function redirectPublishBlocked(path: string, missingItems: string[]): never {
+  redirectWithError(
+    path,
+    `Публикуването е блокирано. Липсват: ${missingItems.join(", ")}.`,
+  );
+}
+
+async function getProductContentReadiness({
+  supabase,
+  productId,
+  errorPath,
+}: {
+  supabase: Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+  productId: string;
+  errorPath: string;
+}) {
+  const [{ data: primaryImage, error: imageError }, { data: spec, error: specError }] =
+    await Promise.all([
+      supabase
+        .from("product_images")
+        .select("id")
+        .eq("product_id", productId)
+        .eq("is_primary", true)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("product_specs")
+        .select("id")
+        .eq("product_id", productId)
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+  if (imageError || specError) {
+    redirectWithError(
+      errorPath,
+      "Готовността за публикуване не можа да бъде проверена. Опитайте отново.",
+    );
+  }
+
+  return {
+    hasPrimaryImage: Boolean(primaryImage),
+    hasSpecs: Boolean(spec),
+  };
+}
+
 function validateSharedProductInput(formData: FormData, errorPath: string) {
   const name = getText(formData, "name");
   const slug = slugify(getText(formData, "slug"));
@@ -246,6 +320,10 @@ export async function createProduct(formData: FormData) {
   const errorPath = "/admin/products/new";
   const input = validateSharedProductInput(formData, errorPath);
 
+  if (input.isPublished) {
+    redirectPublishBlocked(errorPath, ["основна снимка", "характеристики"]);
+  }
+
   const { data: existingProduct } = await supabase
     .from("products")
     .select("id")
@@ -376,6 +454,27 @@ export async function updateProduct(formData: FormData) {
     errorPath,
   });
 
+  if (input.isPublished) {
+    const contentReadiness = await getProductContentReadiness({
+      supabase,
+      productId,
+      errorPath,
+    });
+    const missingItems = getPublishReadinessMissingItems({
+      name: input.name,
+      slug: input.slug,
+      priceAmount: input.priceAmount,
+      brandId,
+      categoryId: input.categoryId,
+      subcategoryId: input.subcategoryId,
+      ...contentReadiness,
+    });
+
+    if (missingItems.length > 0) {
+      redirectPublishBlocked(errorPath, missingItems);
+    }
+  }
+
   const { error: updateError } = await supabase
     .from("products")
     .update({
@@ -416,12 +515,33 @@ export async function toggleProductPublished(formData: FormData) {
 
   const { data: product, error: productError } = await supabase
     .from("products")
-    .select("id, name")
+    .select("id, name, slug, price_amount, brand_id, category_id, subcategory_id")
     .eq("id", productId)
     .maybeSingle();
 
   if (productError || !product) {
     redirect("/admin/products?error=product-not-found");
+  }
+
+  if (nextPublished) {
+    const contentReadiness = await getProductContentReadiness({
+      supabase,
+      productId,
+      errorPath: "/admin/products",
+    });
+    const missingItems = getPublishReadinessMissingItems({
+      name: product.name,
+      slug: product.slug,
+      priceAmount: product.price_amount,
+      brandId: product.brand_id,
+      categoryId: product.category_id,
+      subcategoryId: product.subcategory_id,
+      ...contentReadiness,
+    });
+
+    if (missingItems.length > 0) {
+      redirectPublishBlocked("/admin/products", missingItems);
+    }
   }
 
   const { error: updateError } = await supabase
