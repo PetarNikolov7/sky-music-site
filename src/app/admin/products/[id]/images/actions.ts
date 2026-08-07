@@ -49,7 +49,7 @@ async function ensureProductExists(productId: string) {
 
   const { data: product, error } = await supabase
     .from("products")
-    .select("id, name")
+    .select("id, name, is_published")
     .eq("id", productId)
     .maybeSingle();
 
@@ -188,17 +188,59 @@ export async function setPrimaryProductImage(
 }
 
 export async function deleteProductImage(productId: string, imageId: string) {
-  const { supabase } = await ensureProductExists(productId);
+  const { supabase, product } = await ensureProductExists(productId);
 
-  const { data: image, error: imageError } = await supabase
+  const { data: images, error: imageError } = await supabase
     .from("product_images")
-    .select("id, storage_path, is_primary")
-    .eq("id", imageId)
+    .select("id, storage_path, is_primary, sort_order, created_at")
     .eq("product_id", productId)
-    .maybeSingle();
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  const image = images?.find((candidate) => candidate.id === imageId);
 
   if (imageError || !image) {
     redirectWithError(productId, "Снимката не беше намерена.");
+  }
+
+  const remainingImages = (images ?? []).filter(
+    (candidate) => candidate.id !== imageId,
+  );
+
+  if (product.is_published && remainingImages.length === 0) {
+    redirectWithError(
+      productId,
+      "Публикуван продукт не може да остане без основна снимка. Първо скрийте продукта или добавете снимка заместител.",
+    );
+  }
+
+  if (product.is_published) {
+    const remainingPrimary = remainingImages.find(
+      (candidate) => candidate.is_primary,
+    );
+    const replacement = remainingPrimary ?? remainingImages[0];
+
+    if (!replacement) {
+      redirectWithError(
+        productId,
+        "Публикуван продукт не може да остане без основна снимка. Първо скрийте продукта или добавете снимка заместител.",
+      );
+    }
+
+    if (!remainingPrimary) {
+      const { error: replacementError } = await supabase
+        .from("product_images")
+        .update({ is_primary: true })
+        .eq("id", replacement.id)
+        .eq("product_id", productId);
+
+      if (replacementError) {
+        redirectWithError(
+          productId,
+          "Снимката не беше изтрита, защото основната снимка заместител не можа да бъде зададена.",
+        );
+      }
+    }
   }
 
   const { error: deleteRowError } = await supabase
@@ -215,7 +257,7 @@ export async function deleteProductImage(productId: string, imageId: string) {
     await supabase.storage.from(bucketName).remove([image.storage_path]);
   }
 
-  if (image.is_primary) {
+  if (image.is_primary && !product.is_published) {
     const { data: nextImage } = await supabase
       .from("product_images")
       .select("id")

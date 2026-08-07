@@ -38,6 +38,7 @@ type ProductRow = {
   slug: string;
   name: string;
   sku: string | null;
+  is_published: boolean | null;
   brands: RelationName;
   categories: RelationName;
   subcategories: RelationName;
@@ -82,6 +83,7 @@ export default async function ProductSpecsPage({
         slug,
         name,
         sku,
+        is_published,
         brands(name),
         categories(name),
         subcategories(name)
@@ -207,6 +209,14 @@ export default async function ProductSpecsPage({
         </div>
       )}
 
+      {product.is_published && (
+        <div className="mt-6 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-5 text-sm font-bold leading-7 text-amber-100">
+          Продуктът е публикуван. Последната характеристика не може да бъде
+          изтрита. Първо скрийте продукта или добавете характеристика
+          заместител.
+        </div>
+      )}
+
       {specsError && (
         <div className="mt-6 rounded-2xl border border-red-400/25 bg-red-400/[0.08] p-5 text-sm leading-7 text-red-200">
           <p className="font-black">Грешка при зареждане на характеристиките.</p>
@@ -259,7 +269,9 @@ export default async function ProductSpecsPage({
 
           <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4 text-sm leading-7 text-amber-100">
             Внимание: този бутон заменя всички текущи характеристики на продукта
-            с текста от голямото поле. Това е удобно при копиране от доставчик.
+            с текста от голямото поле. Новият комплект се записва преди старият
+            да бъде премахнат, за да не остане продуктът без характеристики при
+            грешка.
           </div>
 
           <button

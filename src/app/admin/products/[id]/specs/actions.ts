@@ -62,13 +62,15 @@ async function ensureProductExists({
 }) {
   const { data, error } = await supabase
     .from("products")
-    .select("id")
+    .select("id, is_published")
     .eq("id", productId)
     .maybeSingle();
 
   if (error || !data) {
     redirect("/admin/products?error=product-not-found");
   }
+
+  return data;
 }
 
 export async function replaceProductSpecsFromText(formData: FormData) {
@@ -92,15 +94,15 @@ export async function replaceProductSpecsFromText(formData: FormData) {
     );
   }
 
-  const { error: deleteError } = await supabase
+  const { data: existingSpecs, error: existingSpecsError } = await supabase
     .from("product_specs")
-    .delete()
+    .select("id")
     .eq("product_id", productId);
 
-  if (deleteError) {
+  if (existingSpecsError) {
     redirectWithError(
       productId,
-      "Старите характеристики не можаха да бъдат изчистени.",
+      "Текущите характеристики не можаха да бъдат проверени.",
     );
   }
 
@@ -111,15 +113,43 @@ export async function replaceProductSpecsFromText(formData: FormData) {
     sort_order: (index + 1) * 10,
   }));
 
-  const { error: insertError } = await supabase
+  const { data: insertedSpecs, error: insertError } = await supabase
     .from("product_specs")
-    .insert(rows);
+    .insert(rows)
+    .select("id");
 
   if (insertError) {
     redirectWithError(
       productId,
       "Новите характеристики не можаха да бъдат записани.",
     );
+  }
+
+  const oldSpecIds = (existingSpecs ?? []).map((spec) => spec.id);
+
+  if (oldSpecIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("product_specs")
+      .delete()
+      .in("id", oldSpecIds)
+      .eq("product_id", productId);
+
+    if (deleteError) {
+      const insertedSpecIds = (insertedSpecs ?? []).map((spec) => spec.id);
+
+      if (insertedSpecIds.length > 0) {
+        await supabase
+          .from("product_specs")
+          .delete()
+          .in("id", insertedSpecIds)
+          .eq("product_id", productId);
+      }
+
+      redirectWithError(
+        productId,
+        "Старите характеристики не можаха да бъдат заменени. Текущият комплект е запазен; опитайте отново.",
+      );
+    }
   }
 
   redirect(`/admin/products/${productId}/specs?bulkUpdated=${specs.length}`);
@@ -208,6 +238,24 @@ export async function deleteProductSpec(formData: FormData) {
 
   if (!productId || !specId) {
     redirect("/admin/products?error=missing-spec");
+  }
+
+  const product = await ensureProductExists({ productId, supabase });
+
+  const { count, error: countError } = await supabase
+    .from("product_specs")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", productId);
+
+  if (countError) {
+    redirectWithError(productId, "Броят на характеристиките не можа да бъде проверен.");
+  }
+
+  if (product.is_published && (count ?? 0) <= 1) {
+    redirectWithError(
+      productId,
+      "Публикуван продукт не може да остане без характеристики. Първо скрийте продукта или добавете характеристика заместител.",
+    );
   }
 
   const { error } = await supabase

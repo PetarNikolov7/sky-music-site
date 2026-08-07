@@ -167,6 +167,14 @@ export default async function ProductImagesPage({
         </div>
       )}
 
+      {product.is_published && (
+        <div className="mt-6 rounded-2xl border border-amber-400/25 bg-amber-400/[0.08] p-5 text-sm font-bold leading-7 text-amber-100">
+          Продуктът е публикуван. Последната снимка не може да бъде изтрита и
+          винаги трябва да има основна снимка. Първо скрийте продукта или
+          добавете снимка заместител.
+        </div>
+      )}
+
       {query.uploaded && (
         <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
           Снимката беше качена успешно.
