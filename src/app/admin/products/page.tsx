@@ -3,6 +3,7 @@ import Link from "next/link";
 import AdminShell from "@/app/admin/components/AdminShell";
 import { requireAdmin } from "@/app/admin/lib/requireAdmin";
 import { toggleProductPublished } from "./actions";
+import DeleteProductButton from "./DeleteProductButton";
 
 export const metadata: Metadata = {
   title: "Admin продукти",
@@ -48,6 +49,8 @@ type AdminProductsPageProps = {
     updated?: string;
     published?: string;
     hidden?: string;
+    deleted?: string;
+    storageWarning?: string;
     imageUploaded?: string;
     imageDeleted?: string;
     error?: string;
@@ -230,6 +233,18 @@ export default async function AdminProductsPage({
       {params.hidden && (
         <div className="mt-6 rounded-2xl border border-sky-400/25 bg-sky-400/[0.08] p-5 text-sm font-bold leading-7 text-sky-100">
           Продуктът „{params.hidden}“ беше скрит.
+        </div>
+      )}
+
+      {params.deleted && (
+        <div className="mt-6 rounded-2xl border border-emerald-400/25 bg-emerald-400/[0.08] p-5 text-sm font-bold leading-7 text-emerald-200">
+          Продуктът „{params.deleted}“ беше изтрит успешно.
+          {params.storageWarning && (
+            <span className="mt-2 block text-amber-200">
+              Продуктът е премахнат, но част от файловете в Storage не можаха
+              да бъдат изчистени автоматично.
+            </span>
+          )}
         </div>
       )}
 
@@ -440,6 +455,13 @@ export default async function AdminProductsPage({
                           {product.is_published ? "Скрий" : "Публикувай"}
                         </button>
                       </form>
+
+                      {!product.is_published && (
+                        <DeleteProductButton
+                          productId={product.id}
+                          productName={product.name}
+                        />
+                      )}
                     </div>
 
                     <p className="mt-3 text-xs text-slate-600">

@@ -560,3 +560,89 @@ export async function toggleProductPublished(formData: FormData) {
   const key = nextPublished ? "published" : "hidden";
   redirect(`/admin/products?${key}=${encodeURIComponent(product.name)}`);
 }
+
+export async function deleteProduct(formData: FormData) {
+  const { supabase } = await requireAdmin();
+  const productId = getText(formData, "product_id");
+  const confirmationName = getText(formData, "confirmation_name");
+
+  if (!productId) {
+    redirectWithError("/admin/products", "Липсва продукт за изтриване.");
+  }
+
+  const { data: product, error: productError } = await supabase
+    .from("products")
+    .select(
+      "id, name, is_published, product_images(storage_bucket, storage_path)",
+    )
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (productError || !product) {
+    redirectWithError("/admin/products", "Продуктът за изтриване не беше намерен.");
+  }
+
+  if (product.is_published) {
+    redirectWithError(
+      "/admin/products",
+      "Публикуван продукт не може да бъде изтрит. Първо скрийте продукта.",
+    );
+  }
+
+  if (confirmationName !== product.name) {
+    redirectWithError(
+      "/admin/products",
+      "Потвърждението за изтриване не съвпада с името на продукта.",
+    );
+  }
+
+  const { data: deletedProduct, error: deleteError } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", productId)
+    .eq("is_published", false)
+    .select("id")
+    .maybeSingle();
+
+  if (deleteError || !deletedProduct) {
+    redirectWithError(
+      "/admin/products",
+      "Продуктът не беше изтрит. Проверете дали все още е скрит и опитайте отново.",
+    );
+  }
+
+  const images = product.product_images ?? [];
+  const storagePathsByBucket = new Map<string, string[]>();
+
+  for (const image of images) {
+    if (!image.storage_path) {
+      continue;
+    }
+
+    const bucket = image.storage_bucket || "product-images";
+    const paths = storagePathsByBucket.get(bucket) ?? [];
+
+    paths.push(image.storage_path);
+    storagePathsByBucket.set(bucket, paths);
+  }
+
+  let storageCleanupFailed = false;
+
+  for (const [bucket, paths] of storagePathsByBucket) {
+    const { error: storageError } = await supabase.storage
+      .from(bucket)
+      .remove(paths);
+
+    if (storageError) {
+      storageCleanupFailed = true;
+    }
+  }
+
+  const query = new URLSearchParams({ deleted: product.name });
+
+  if (storageCleanupFailed) {
+    query.set("storageWarning", "1");
+  }
+
+  redirect(`/admin/products?${query.toString()}`);
+}
