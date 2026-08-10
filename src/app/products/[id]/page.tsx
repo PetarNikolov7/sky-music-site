@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ChatInquiryButton from "@/components/ChatInquiryButton";
 import SiteHeader from "@/components/SiteHeader";
@@ -96,8 +97,8 @@ function getStatusClass(status: string) {
   return "bg-red-400/10 text-red-300 ring-1 ring-red-400/20";
 }
 
-function makeRequestLink(productName: string) {
-  return `/request?product=${encodeURIComponent(productName)}`;
+function makeRequestLink(productName: string, productSlug: string) {
+  return `/request?product=${encodeURIComponent(productName)}&productSlug=${encodeURIComponent(productSlug)}`;
 }
 
 function makeCategoryLink(category: string) {
@@ -170,12 +171,12 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           aria-label="Навигация по продуктите"
           className="flex flex-wrap items-center gap-2 pt-9 text-sm text-slate-400"
         >
-          <a
+          <Link
             href="/products"
             className="cursor-pointer transition hover:text-white"
           >
             Продукти
-          </a>
+          </Link>
 
           <span className="text-slate-600">→</span>
 
@@ -385,7 +386,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               </ChatInquiryButton>
 
               <a
-                href={makeRequestLink(product.name)}
+                href={makeRequestLink(product.name, product.slug)}
                 className="cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-6 py-4 text-center font-black text-white shadow-xl shadow-blue-950/40 transition hover:scale-[1.01] sm:col-span-2"
               >
                 Поръчка / доставка

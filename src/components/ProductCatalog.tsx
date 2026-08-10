@@ -1,6 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ChatInquiryButton from "@/components/ChatInquiryButton";
 import HomeBannerSlideshow from "@/components/HomeBannerSlideshow";
 import SiteHeader from "@/components/SiteHeader";
@@ -126,12 +128,14 @@ const categoryVisuals: Record<
 
 const heroCategoryNames = ["Клавишни", "Струнни", "Озвучаване", "Микрофони"];
 
-function makeRequestLink(productName?: string) {
+function makeRequestLink(productName?: string, productSlug?: string) {
   if (!productName) {
     return "/request";
   }
 
-  return `/request?product=${encodeURIComponent(productName)}`;
+  return `/request?product=${encodeURIComponent(productName)}${
+    productSlug ? `&productSlug=${encodeURIComponent(productSlug)}` : ""
+  }`;
 }
 
 function makeProductLink(productId: string) {
@@ -170,6 +174,7 @@ function getStatusClass(status: string) {
 }
 
 export default function ProductCatalog({ products }: ProductCatalogProps) {
+  const router = useRouter();
   const featuredProducts = products
     .filter((product) => product.featured)
     .slice(0, 6);
@@ -179,7 +184,7 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
   ).sort((first, second) => first.localeCompare(second, "bg"));
 
   function openProduct(productId: string) {
-    window.location.href = makeProductLink(productId);
+    router.push(makeProductLink(productId));
   }
 
   return (
@@ -206,12 +211,12 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
             </p>
 
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-              <a
+              <Link
                 href="/products"
                 className="rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-8 py-4 text-center font-black text-white shadow-xl shadow-blue-950/50 transition hover:scale-[1.02]"
               >
                 Разгледайте продуктите
-              </a>
+              </Link>
 
               <a
                 href="/request"
@@ -270,12 +275,12 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
                   })}
                 </div>
 
-                <a
+                <Link
                   href="/products"
                   className="mt-6 block rounded-full border border-sky-400/25 bg-sky-400/10 px-6 py-3 text-center text-sm font-black text-sky-100 transition hover:bg-sky-400/20"
                 >
                   Всички категории
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -297,12 +302,12 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
               </p>
             </div>
 
-            <a
+            <Link
               href="/products"
               className="rounded-full bg-white px-6 py-3 text-center text-sm font-black text-black transition hover:bg-slate-200"
             >
               Всички продукти
-            </a>
+            </Link>
           </div>
 
           {featuredProducts.length > 0 ? (
@@ -453,7 +458,7 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
                         </ChatInquiryButton>
 
                         <a
-                          href={makeRequestLink(product.name)}
+                          href={makeRequestLink(product.name, product.id)}
                           onClick={(event) => event.stopPropagation()}
                           className="col-span-2 cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-4 text-center text-sm font-black text-white transition hover:scale-[1.01]"
                         >
@@ -489,12 +494,12 @@ export default function ProductCatalog({ products }: ProductCatalogProps) {
               </p>
             </div>
 
-            <a
+            <Link
               href="/products"
               className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-center text-sm font-black text-white transition hover:bg-white/10"
             >
               Всички продукти
-            </a>
+            </Link>
           </div>
 
           {availableBrands.length > 0 ? (

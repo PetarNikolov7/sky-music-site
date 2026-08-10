@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 
 const whatsappNumber = "359884211761";
 const messengerUrl = "https://m.me/skymusicbg";
@@ -20,7 +19,6 @@ function makeWhatsappLink(productName: string | null) {
 }
 
 export default function FloatingContactChat() {
-  const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -30,11 +28,6 @@ export default function FloatingContactChat() {
     () => makeWhatsappLink(productName),
     [productName],
   );
-
-  useEffect(() => {
-    setPanelOpen(false);
-    setProductName(null);
-  }, [pathname]);
 
   useEffect(() => {
     function handleOpenChat(event: Event) {

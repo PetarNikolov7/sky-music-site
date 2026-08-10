@@ -121,9 +121,13 @@ const categoryVisuals: Record<string, CategoryVisual> = {
   },
 };
 
-function makeRequestLink(productName?: string) {
+function makeRequestLink(productName?: string, productSlug?: string) {
   return productName
-    ? `/request?product=${encodeURIComponent(productName)}`
+    ? `/request?product=${encodeURIComponent(productName)}${
+        productSlug
+          ? `&productSlug=${encodeURIComponent(productSlug)}`
+          : ""
+      }`
     : "/request";
 }
 
@@ -210,15 +214,6 @@ function BrowseNavigation({
   const [expandedCategoryName, setExpandedCategoryName] = useState<
     string | null
   >(selectedCategory === allCategoriesLabel ? null : selectedCategory);
-
-  useEffect(() => {
-    if (selectedCategory === allCategoriesLabel) {
-      setExpandedCategoryName(null);
-      return;
-    }
-
-    setExpandedCategoryName(selectedCategory);
-  }, [selectedCategory]);
 
   function selectCategoryAndExpand(categoryName: string) {
     setExpandedCategoryName(categoryName);
@@ -502,7 +497,7 @@ function ProductCard({ product, onOpen }: ProductCardProps) {
           </ChatInquiryButton>
 
           <a
-            href={makeRequestLink(product.name)}
+            href={makeRequestLink(product.name, product.id)}
             onClick={(event) => event.stopPropagation()}
             className="col-span-2 cursor-pointer rounded-full bg-gradient-to-r from-sky-400 to-blue-700 px-4 py-4 text-center text-sm font-black text-white transition hover:scale-[1.01]"
           >
@@ -526,11 +521,6 @@ function ProductsPageContent({
   const subcategoryFromUrl = searchParams.get("subcategory");
   const brandFromUrl = searchParams.get("brand");
 
-  const [selectedCategory, setSelectedCategory] = useState(allCategoriesLabel);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null,
-  );
-  const [selectedBrand, setSelectedBrand] = useState(allBrandsLabel);
   const [search, setSearch] = useState("");
   const [landingFiltersOpen, setLandingFiltersOpen] = useState(false);
   const [mobileBrowseOpen, setMobileBrowseOpen] = useState(false);
@@ -541,7 +531,25 @@ function ProductsPageContent({
     ).sort((first, second) => first.localeCompare(second, "bg"));
 
     return [allBrandsLabel, ...productBrands];
-  }, []);
+  }, [products]);
+
+  const selectedCategory =
+    categoryFromUrl && categories.includes(categoryFromUrl)
+      ? categoryFromUrl
+      : allCategoriesLabel;
+  const selectedCategoryData = catalogCategories.find(
+    (item) => item.name === selectedCategory,
+  );
+  const selectedSubcategory =
+    selectedCategory !== allCategoriesLabel &&
+    subcategoryFromUrl &&
+    selectedCategoryData?.subcategories.includes(subcategoryFromUrl)
+      ? subcategoryFromUrl
+      : null;
+  const selectedBrand =
+    brandFromUrl && allBrands.includes(brandFromUrl)
+      ? brandFromUrl
+      : allBrandsLabel;
 
   const availableSubcategories = useMemo(() => {
     const category = catalogCategories.find(
@@ -549,36 +557,7 @@ function ProductsPageContent({
     );
 
     return category?.subcategories ?? [];
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    const validCategory =
-      categoryFromUrl && categories.includes(categoryFromUrl)
-        ? categoryFromUrl
-        : allCategoriesLabel;
-
-    const category = catalogCategories.find(
-      (item) => item.name === validCategory,
-    );
-
-    const validSubcategory =
-      validCategory !== allCategoriesLabel &&
-      subcategoryFromUrl &&
-      category?.subcategories.includes(subcategoryFromUrl)
-        ? subcategoryFromUrl
-        : null;
-
-    setSelectedCategory(validCategory);
-    setSelectedSubcategory(validSubcategory);
-  }, [categoryFromUrl, subcategoryFromUrl]);
-
-  useEffect(() => {
-    if (brandFromUrl && allBrands.includes(brandFromUrl)) {
-      setSelectedBrand(brandFromUrl);
-    } else {
-      setSelectedBrand(allBrandsLabel);
-    }
-  }, [brandFromUrl, allBrands]);
+  }, [catalogCategories, selectedCategory]);
 
   useEffect(() => {
     if (!mobileBrowseOpen) {
@@ -656,6 +635,7 @@ function ProductsPageContent({
     selectedSubcategory,
     selectedBrand,
     search,
+    products,
   ]);
 
   const emptyState = useMemo(() => {
@@ -691,8 +671,6 @@ function ProductsPageContent({
   }, [hasSearch, selectedSubcategory, hasBrandFilter, selectedBrand]);
 
   function selectCategory(category: string) {
-    setSelectedCategory(category);
-    setSelectedSubcategory(null);
     setLandingFiltersOpen(false);
 
     router.replace(makeProductsUrl(category, null, selectedBrand), {
@@ -701,8 +679,6 @@ function ProductsPageContent({
   }
 
   function selectSubcategory(category: string, subcategory: string) {
-    setSelectedCategory(category);
-    setSelectedSubcategory(subcategory);
     setMobileBrowseOpen(false);
 
     router.replace(makeProductsUrl(category, subcategory, selectedBrand), {
@@ -711,8 +687,6 @@ function ProductsPageContent({
   }
 
   function selectBrand(brand: string) {
-    setSelectedBrand(brand);
-
     router.replace(
       makeProductsUrl(selectedCategory, selectedSubcategory, brand),
       { scroll: false },
@@ -720,9 +694,6 @@ function ProductsPageContent({
   }
 
   function clearFilters() {
-    setSelectedCategory(allCategoriesLabel);
-    setSelectedSubcategory(null);
-    setSelectedBrand(allBrandsLabel);
     setSearch("");
     setLandingFiltersOpen(false);
     setMobileBrowseOpen(false);
@@ -1016,6 +987,7 @@ function ProductsPageContent({
               <aside className="hidden lg:block">
                 <div className="sticky top-28">
                   <BrowseNavigation
+                    key={`desktop-${selectedCategory}`}
                     catalogCategories={catalogCategories}
                     selectedCategory={selectedCategory}
                     selectedSubcategory={selectedSubcategory}
@@ -1160,6 +1132,7 @@ function ProductsPageContent({
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <BrowseNavigation
+              key={`mobile-${selectedCategory}`}
               catalogCategories={catalogCategories}
               selectedCategory={selectedCategory}
               selectedSubcategory={selectedSubcategory}

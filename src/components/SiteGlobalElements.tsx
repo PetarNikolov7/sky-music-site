@@ -17,7 +17,7 @@ export default function SiteGlobalElements() {
   return (
     <>
       <SiteFooter />
-      <FloatingContactChat />
+      <FloatingContactChat key={pathname} />
     </>
   );
 }

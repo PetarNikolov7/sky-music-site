@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 
 type OrderPayload = {
   product?: unknown;
+  productSlug?: unknown;
   name?: unknown;
   phone?: unknown;
   email?: unknown;
@@ -31,6 +32,7 @@ type CourierProvider = "econt" | "speedy" | null;
 
 type ProductLookup = {
   id: string;
+  name: string;
   sku: string | null;
   price_amount: number | string | null;
   currency: string | null;
@@ -113,13 +115,14 @@ function createServiceRoleClient() {
   });
 }
 
-async function findProductByName(productName: string) {
+async function findPublishedProduct(productSlug: string) {
   const supabase = createServiceRoleClient();
 
   const { data, error } = await supabase
     .from("products")
-    .select("id, sku, price_amount, currency")
-    .eq("name", productName)
+    .select("id, name, sku, price_amount, currency")
+    .eq("slug", productSlug)
+    .eq("is_published", true)
     .limit(1)
     .maybeSingle();
 
@@ -133,6 +136,7 @@ async function findProductByName(productName: string) {
 
 async function createOrderRecord({
   product,
+  productSlug,
   name,
   phone,
   email,
@@ -146,6 +150,7 @@ async function createOrderRecord({
   note,
 }: {
   product: string;
+  productSlug: string;
   name: string;
   phone: string;
   email: string;
@@ -161,7 +166,15 @@ async function createOrderRecord({
   const supabase = createServiceRoleClient();
   const fulfillmentMethod = mapFulfillmentMethod(deliveryMethod);
   const mappedCourier = mapCourierProvider(courierProvider);
-  const productRecord = await findProductByName(product);
+  const productRecord = productSlug
+    ? await findPublishedProduct(productSlug)
+    : null;
+
+  if (productSlug && !productRecord) {
+    throw new Error("Избраният продукт вече не е публикуван.");
+  }
+
+  const productName = productRecord?.name ?? product;
 
   const isCourierOffice = fulfillmentMethod === "courier_office";
   const isCourierAddress = fulfillmentMethod === "courier_address";
@@ -202,7 +215,7 @@ async function createOrderRecord({
   const { error: itemError } = await supabase.from("order_items").insert({
     order_id: order.id,
     product_id: productRecord?.id ?? null,
-    product_name: product,
+    product_name: productName,
     product_sku: productRecord?.sku ?? null,
     quantity: 1,
     unit_price_amount: productRecord?.price_amount ?? null,
@@ -211,12 +224,22 @@ async function createOrderRecord({
 
   if (itemError) {
     console.error("Supabase order item insert error:", itemError);
+    const { error: cleanupError } = await supabase
+      .from("orders")
+      .delete()
+      .eq("id", order.id);
+
+    if (cleanupError) {
+      console.error("Supabase incomplete order cleanup error:", cleanupError);
+    }
+
     throw new Error("Редът с продукта към поръчката не можа да бъде записан.");
   }
 
   return {
     id: order.id as string,
     orderNumber: order.order_number as number,
+    productName,
   };
 }
 
@@ -235,6 +258,7 @@ export async function POST(request: NextRequest) {
     }
 
     const product = cleanText(body.product, 250);
+    const productSlug = cleanText(body.productSlug, 160);
     const name = cleanText(body.name, 120);
     const phone = cleanText(body.phone, 60);
     const email = cleanText(body.email, 150);
@@ -286,6 +310,7 @@ export async function POST(request: NextRequest) {
 
     const orderRecord = await createOrderRecord({
       product,
+      productSlug,
       name,
       phone,
       email,
@@ -305,12 +330,13 @@ export async function POST(request: NextRequest) {
       timeZone: "Europe/Sofia",
     }).format(new Date());
 
-    const subject = `Нова поръчка #${orderRecord.orderNumber} от сайта: ${product}`;
+    const orderedProductName = orderRecord.productName;
+    const subject = `Нова поръчка #${orderRecord.orderNumber} от сайта: ${orderedProductName}`;
 
     const textContent = [
       `НОВА ПОРЪЧКА #${orderRecord.orderNumber} — SKY MUSIC BG`,
       "",
-      `Продукт: ${product}`,
+      `Продукт: ${orderedProductName}`,
       "",
       "КЛИЕНТ",
       `Име: ${name}`,
@@ -344,7 +370,7 @@ export async function POST(request: NextRequest) {
           <div style="padding:30px 32px;">
             <div style="margin-bottom:26px;padding:18px;background:#eff6ff;border-radius:14px;border:1px solid #dbeafe;">
               <p style="margin:0 0 7px;font-size:11px;font-weight:700;letter-spacing:0.16em;color:#64748b;">ПРОДУКТ</p>
-              <p style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${htmlValue(product)}</p>
+              <p style="margin:0;font-size:18px;font-weight:700;color:#0f172a;">${htmlValue(orderedProductName)}</p>
             </div>
 
             <h2 style="margin:0 0 14px;font-size:17px;">Клиент</h2>

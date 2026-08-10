@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
 const phone = "+359884211761";
@@ -249,6 +250,7 @@ const speedyOfficeLocatorUrl =
 function RequestPageContent() {
   const searchParams = useSearchParams();
   const productFromUrl = searchParams.get("product") ?? "";
+  const productSlugFromUrl = searchParams.get("productSlug") ?? "";
 
   const [product, setProduct] = useState(productFromUrl);
   const [name, setName] = useState("");
@@ -263,10 +265,10 @@ function RequestPageContent() {
   const [courierOfficeId, setCourierOfficeId] = useState("");
   const [courierOfficeName, setCourierOfficeName] = useState("");
   const [courierOfficeAddress, setCourierOfficeAddress] = useState("");
-  const [courierOffices, setCourierOffices] = useState<CourierOffice[]>([]);
-  const [officesLoadStatus, setOfficesLoadStatus] =
+  const [, setCourierOffices] = useState<CourierOffice[]>([]);
+  const [, setOfficesLoadStatus] =
     useState<OfficesLoadStatus>("idle");
-  const [officesLoadError, setOfficesLoadError] = useState("");
+  const [, setOfficesLoadError] = useState("");
   const [isEcontLocatorOpen, setIsEcontLocatorOpen] = useState(false);
   const [econtLocatorRefreshKey, setEcontLocatorRefreshKey] = useState(0);
   const [isSpeedyLocatorOpen, setIsSpeedyLocatorOpen] = useState(false);
@@ -280,13 +282,6 @@ function RequestPageContent() {
 
   const isSending = submitStatus === "sending";
   const isSuccess = submitStatus === "success";
-
-  useEffect(() => {
-    setProduct(productFromUrl);
-    setSubmitStatus("idle");
-    setSubmitError("");
-    setOrderNumber(null);
-  }, [productFromUrl]);
 
   useEffect(() => {
     if (!isEcontLocatorOpen) {
@@ -453,17 +448,6 @@ function RequestPageContent() {
     };
   }, [loadCourierOffices]);
 
-  function handleCourierOfficeSelect(officeId: string) {
-    setCourierOfficeId(officeId);
-
-    const selectedOffice = courierOffices.find(
-      (office) => office.office_id === officeId,
-    );
-
-    setCourierOfficeName(selectedOffice?.name ?? "");
-    setCourierOfficeAddress(selectedOffice?.address ?? "");
-  }
-
   function refreshEcontLocator() {
     setEcontLocatorRefreshKey((currentKey) => currentKey + 1);
   }
@@ -509,6 +493,7 @@ function RequestPageContent() {
         },
         body: JSON.stringify({
           product,
+          productSlug: productSlugFromUrl,
           name,
           phone: customerPhone,
           email: customerEmail,
@@ -633,12 +618,12 @@ function RequestPageContent() {
               </div>
             </div>
 
-            <a
+            <Link
               href="/products"
               className="mt-5 inline-flex cursor-pointer rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
             >
               ← Назад към категориите
-            </a>
+            </Link>
           </div>
 
           <div className="rounded-[2.5rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/30 md:p-8">
@@ -687,12 +672,12 @@ function RequestPageContent() {
                   )}
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <a
+                    <Link
                       href="/products"
                       className="cursor-pointer rounded-full bg-white px-7 py-4 text-center text-sm font-black text-black transition hover:bg-slate-200"
                     >
                       Разгледайте продуктите
-                    </a>
+                    </Link>
 
                     <button
                       type="button"
